@@ -2,31 +2,31 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>education on Peyton Walters</title>
-    <link>https://pwpon500.github.io/tags/education/</link>
+    <link>https://pawalt.github.io/tags/education/</link>
     <description>Recent content in education on Peyton Walters</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     <copyright>Peyton Walters</copyright>
     <lastBuildDate>Mon, 29 Apr 2019 00:00:00 +0000</lastBuildDate>
     
-	<atom:link href="https://pwpon500.github.io/tags/education/index.xml" rel="self" type="application/rss+xml" />
+	<atom:link href="https://pawalt.github.io/tags/education/index.xml" rel="self" type="application/rss+xml" />
     
     
     <item>
       <title>Mininet for Education</title>
-      <link>https://pwpon500.github.io/posts/2019/04/mininet-for-education/</link>
+      <link>https://pawalt.github.io/posts/2019/04/mininet-for-education/</link>
       <pubDate>Mon, 29 Apr 2019 00:00:00 +0000</pubDate>
       
-      <guid>https://pwpon500.github.io/posts/2019/04/mininet-for-education/</guid>
+      <guid>https://pawalt.github.io/posts/2019/04/mininet-for-education/</guid>
       <description>For about 2 years, I built and led the NEAT Rack Project, a program meant to teach high school and college aged students network engineering. In this program, we covered things as basic as introduction to Linux and as advanced as firewalling or dynamic routing with BGP. This program was well-run, well-written, and it overall did a solid job of giving students an introduction to technology infrastructure. There was just one problem with it - hardware.</description>
     </item>
     
     <item>
       <title>On the Value of Formal Education</title>
-      <link>https://pwpon500.github.io/posts/2019/04/on-the-value-of-formal-education/</link>
+      <link>https://pawalt.github.io/posts/2019/04/on-the-value-of-formal-education/</link>
       <pubDate>Sun, 14 Apr 2019 00:00:00 +0000</pubDate>
       
-      <guid>https://pwpon500.github.io/posts/2019/04/on-the-value-of-formal-education/</guid>
+      <guid>https://pawalt.github.io/posts/2019/04/on-the-value-of-formal-education/</guid>
       <description>Over the past few years, I&amp;rsquo;ve started to see a multitude of online videos/articles about the weakening value of college, particularly in the area of computer science. Whether it&amp;rsquo;s Devon Crawford talking about how he dropped out of school or Mashable writing an article trashing CS degrees, the popular view on the internet seems to be &amp;ldquo;Eh, just learn it on your own.&amp;rdquo; I&amp;rsquo;ve struggled with my opinion significantly on this topic, but overall, I think this view is deeply flawed.</description>
     </item>
     

@@ -2,22 +2,22 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>opinion on Peyton Walters</title>
-    <link>https://pwpon500.github.io/categories/opinion/</link>
+    <link>https://pawalt.github.io/categories/opinion/</link>
     <description>Recent content in opinion on Peyton Walters</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     <copyright>Peyton Walters</copyright>
     <lastBuildDate>Sun, 14 Apr 2019 00:00:00 +0000</lastBuildDate>
     
-	<atom:link href="https://pwpon500.github.io/categories/opinion/index.xml" rel="self" type="application/rss+xml" />
+	<atom:link href="https://pawalt.github.io/categories/opinion/index.xml" rel="self" type="application/rss+xml" />
     
     
     <item>
       <title>On the Value of Formal Education</title>
-      <link>https://pwpon500.github.io/posts/2019/04/on-the-value-of-formal-education/</link>
+      <link>https://pawalt.github.io/posts/2019/04/on-the-value-of-formal-education/</link>
       <pubDate>Sun, 14 Apr 2019 00:00:00 +0000</pubDate>
       
-      <guid>https://pwpon500.github.io/posts/2019/04/on-the-value-of-formal-education/</guid>
+      <guid>https://pawalt.github.io/posts/2019/04/on-the-value-of-formal-education/</guid>
       <description>Over the past few years, I&amp;rsquo;ve started to see a multitude of online videos/articles about the weakening value of college, particularly in the area of computer science. Whether it&amp;rsquo;s Devon Crawford talking about how he dropped out of school or Mashable writing an article trashing CS degrees, the popular view on the internet seems to be &amp;ldquo;Eh, just learn it on your own.&amp;rdquo; I&amp;rsquo;ve struggled with my opinion significantly on this topic, but overall, I think this view is deeply flawed.</description>
     </item>
     

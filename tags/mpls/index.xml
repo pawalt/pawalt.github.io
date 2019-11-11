@@ -2,22 +2,22 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>mpls on Peyton Walters</title>
-    <link>https://pwpon500.github.io/tags/mpls/</link>
+    <link>https://pawalt.github.io/tags/mpls/</link>
     <description>Recent content in mpls on Peyton Walters</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     <copyright>Peyton Walters</copyright>
     <lastBuildDate>Mon, 15 Jan 2018 00:00:00 +0000</lastBuildDate>
     
-	<atom:link href="https://pwpon500.github.io/tags/mpls/index.xml" rel="self" type="application/rss+xml" />
+	<atom:link href="https://pawalt.github.io/tags/mpls/index.xml" rel="self" type="application/rss+xml" />
     
     
     <item>
       <title>VPLS with OpenBSD</title>
-      <link>https://pwpon500.github.io/posts/2018/01/vpls-with-openbsd/</link>
+      <link>https://pawalt.github.io/posts/2018/01/vpls-with-openbsd/</link>
       <pubDate>Mon, 15 Jan 2018 00:00:00 +0000</pubDate>
       
-      <guid>https://pwpon500.github.io/posts/2018/01/vpls-with-openbsd/</guid>
+      <guid>https://pawalt.github.io/posts/2018/01/vpls-with-openbsd/</guid>
       <description>VPLS is extremely useful in allowing multiple sites to be connected to a single bridged domain. Unfortunately, VPLS networks are typically implemented with proprietary technology like a Cisco router. OpenBSD lets us break free of the typical restrictions of proprietary technology and use 100% free software to make a full-fledged VPLS network.
 Why VPLS? With VPLS, you can deliver a layer 2 circuit over a routed backbone. This lets you extend that circuit from one location to another over a route that you can easily control.</description>
     </item>
