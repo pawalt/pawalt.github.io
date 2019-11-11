@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-143263324-1"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-143263324-1');
+</script>
+
+
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="author"
+    content="">
+<meta name="description"
+    content="Recently, I moved from writing my Go in VSCode to writing it in Neovim. I did this for two main reasons:
+ Ubiquity
+I use Neovim for writing pretty much all my other code (except Java), so it was weird to use VSCode for this one purpose.
+ Terminal Integration
+I hate the VS Code terminal. It doesn&amp;rsquo;t have the character support I want, and it overrides a bunch of keys (for example, Ctrl&#43;f for fish autocomplete)." />
+<meta name="keywords" content="im peyton" />
+<meta name="robots" content="noodp" />
+<link rel="canonical" href="https://pawalt.github.io/posts/2019/06/my-neovim-go-setup/" />
+
+
+<title>
+    
+    My Neovim Go Setup :: Peyton Walters 
+    
+</title>
+
+
+
+<link href="https://cdnjs.cloudflare.com/ajax/libs/flag-icon-css/3.2.1/css/flag-icon.min.css" rel="stylesheet"
+    type="text/css">
+
+
+
+<link rel="stylesheet" href="/main.min.a0a9c9d3ba677039929ecf5c63646dd7732481425a68f9b97486c70fde81475d.css">
+
+
+
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/site.webmanifest">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#252627">
+<link rel="shortcut icon" href="/favicon.ico">
+<meta name="theme-color" content="#252627"><meta itemprop="name" content="My Neovim Go Setup">
+<meta itemprop="description" content="Async all the things">
+
+
+<meta itemprop="datePublished" content="2019-06-01T00:00:00&#43;00:00" />
+<meta itemprop="dateModified" content="2019-06-01T00:00:00&#43;00:00" />
+<meta itemprop="wordCount" content="952">
+
+
+
+<meta itemprop="keywords" content="go,golang,vim,neovim,linux," />
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:image" content="https://pawalt.github.io/"/>
+
+<meta name="twitter:title" content="My Neovim Go Setup"/>
+<meta name="twitter:description" content="Async all the things"/>
+
+
+
+<meta property="article:section" content="programming" />
+<meta property="article:section" content="post" />
+
+<meta property="article:published_time" content="2019-06-01 00:00:00 &#43;0000 UTC" />
+
+
+
+
+
+
+
+    </head>
+
+    <body class="">
+        <div class="container">
+            <header class="header">
+    <span class="header__inner">
+        <a href="/" style="text-decoration: none;">
+    <div class="logo">
+        
+            <span class="logo__mark">></span>
+            <span class="logo__text">/home/peyton/ $</span>
+            <span class="logo__cursor"></span>
+        
+    </div>
+</a>
+
+
+        <span class="header__right">
+            
+                <nav class="menu">
+    <ul class="menu__inner"><li><a href="https://pawalt.github.io/about">About</a></li><li><a href="https://pawalt.github.io/posts">Blog</a></li>
+    </ul>
+</nav>
+
+                <span class="menu-trigger">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                        <path d="M0 0h24v24H0z" fill="none"/>
+                        <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/>
+                    </svg>
+                </span>
+            
+
+            <span class="theme-toggle"><svg class="theme-toggler" width="24" height="24" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path d="M22 41C32.4934 41 41 32.4934 41 22C41 11.5066 32.4934 3 22
+  3C11.5066 3 3 11.5066 3 22C3 32.4934 11.5066 41 22 41ZM7 22C7
+  13.7157 13.7157 7 22 7V37C13.7157 37 7 30.2843 7 22Z"/>
+</svg>
+</span>
+        </span>
+    </span>
+</header>
+
+
+            <div class="content">
+                
+    <main class="post">
+
+        <div class="post-info">
+            <p><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-clock"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>5 minutes
+
+            
+
+            </p>
+        </div>
+
+        <article>
+            <h1 class="post-title"><a href="https://pawalt.github.io/posts/2019/06/my-neovim-go-setup/">My Neovim Go Setup</a></h1>
+
+            
+
+            <div class="post-content">
+                
+
+<p>Recently, I moved from writing my Go in VSCode to writing it in Neovim. I did this for two main reasons:</p>
+
+<ol>
+<li><p>Ubiquity</p>
+
+<p>I use Neovim for writing pretty much all my other code (except Java), so it was weird to use VSCode for this one purpose.</p></li>
+
+<li><p>Terminal Integration</p>
+
+<p>I <em>hate</em> the VS Code terminal. It doesn&rsquo;t have the character support I want, and it overrides a bunch of keys (for example, Ctrl+f for fish autocomplete). I&rsquo;m also in the terminal already when I&rsquo;m doing Go development, so being able to just type <code>vim</code> and instantly be in my editor is a blessing.</p></li>
+</ol>
+
+<p>Before I start, it&rsquo;s important to note that I&rsquo;m currently doing all this on Ubuntu 18.04 with Go 1.12, provided via the <code>longsleep/golang-backports</code> ppa. For more info on how to install Go, <a href="https://github.com/golang/go/wiki/Ubuntu">visit the wiki</a></p>
+
+<h2 id="basics">Basics</h2>
+
+<p>The first bit of configuration is my Go tab settings. These are standard for Go, and even if you don&rsquo;t set them, <code>gofmt</code> will enforce them anyway.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-vim" data-lang="vim"><span style="color:#a6e22e">au</span> <span style="color:#a6e22e">FileType</span> <span style="color:#a6e22e">go</span> <span style="color:#a6e22e">set</span> <span style="color:#a6e22e">noexpandtab</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#a6e22e">au</span> <span style="color:#a6e22e">FileType</span> <span style="color:#a6e22e">go</span> <span style="color:#a6e22e">set</span> <span style="color:#a6e22e">shiftwidth</span>=<span style="color:#ae81ff">4</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#a6e22e">au</span> <span style="color:#a6e22e">FileType</span> <span style="color:#a6e22e">go</span> <span style="color:#a6e22e">set</span> <span style="color:#a6e22e">softtabstop</span>=<span style="color:#ae81ff">4</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#a6e22e">au</span> <span style="color:#a6e22e">FileType</span> <span style="color:#a6e22e">go</span> <span style="color:#a6e22e">set</span> <span style="color:#a6e22e">tabstop</span>=<span style="color:#ae81ff">4</span></code></pre></div>
+<p>I&rsquo;m using <a href="https://github.com/VundleVim/Vundle.vim">Vundle</a> for my package management. Frankly, I should be using vim-plug, but I haven&rsquo;t taken the 5 minutes to move over. Vundle does the job just fine.</p>
+
+<p>The first important package to have is <a href="https://github.com/fatih/vim-go">vim-go</a>. This plugin is absolutely fantastic, providing pretty much all the base go features you need. In my configuration for this plugin, I turn on syntax highlighting for basically everything. I also like <code>goimports</code> over <code>gofmt</code> because it sorts my imports, so I use that as the default formatter. Finally, I turn on highlighting of the variable my cursor is on, and I enable type hints in airline.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-vim" data-lang="vim"><span style="color:#75715e">&#34; use goimports not gofmt to format</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">let</span> <span style="color:#a6e22e">g</span>:<span style="color:#a6e22e">go_fmt_command</span> = <span style="color:#e6db74">&#34;goimports&#34;</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#75715e">&#34; syntax highlight all the things</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">let</span> <span style="color:#a6e22e">g</span>:<span style="color:#a6e22e">go_highlight_build_constraints</span> = <span style="color:#ae81ff">1</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">let</span> <span style="color:#a6e22e">g</span>:<span style="color:#a6e22e">go_highlight_extra_types</span> = <span style="color:#ae81ff">1</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">let</span> <span style="color:#a6e22e">g</span>:<span style="color:#a6e22e">go_highlight_fields</span> = <span style="color:#ae81ff">1</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">let</span> <span style="color:#a6e22e">g</span>:<span style="color:#a6e22e">go_highlight_functions</span> = <span style="color:#ae81ff">1</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">let</span> <span style="color:#a6e22e">g</span>:<span style="color:#a6e22e">go_highlight_methods</span> = <span style="color:#ae81ff">1</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">let</span> <span style="color:#a6e22e">g</span>:<span style="color:#a6e22e">go_highlight_operators</span> = <span style="color:#ae81ff">1</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">let</span> <span style="color:#a6e22e">g</span>:<span style="color:#a6e22e">go_highlight_structs</span> = <span style="color:#ae81ff">1</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">let</span> <span style="color:#a6e22e">g</span>:<span style="color:#a6e22e">go_highlight_types</span> = <span style="color:#ae81ff">1</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#75715e">&#34; highlight variables across file</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">let</span> <span style="color:#a6e22e">g</span>:<span style="color:#a6e22e">go_auto_sameids</span> = <span style="color:#ae81ff">1</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#75715e">&#34; vim-go get type info in airline</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">let</span> <span style="color:#a6e22e">g</span>:<span style="color:#a6e22e">go_auto_type_info</span> = <span style="color:#ae81ff">1</span></code></pre></div>
+<p>Once this is all set, and the plugin is installed, run <code>:GoInstallBinaries</code> to get the latest version of all required Go binaries.</p>
+
+<h2 id="file-explorer">File Explorer</h2>
+
+<p>One of the main reasons I switched from Neovim to VS Code for Go development in the first place was the presence of a persistent file browser. I had used NERDTree before, but the fact that it didn&rsquo;t persist through tabs made pretty useless for me. However, recently, I found out about <code>:NERDTreeMirror</code>, and it took NERDTree from a nice idea to a killer plugin for me.</p>
+
+<p><code>:NERDTreeMirror</code> does exactly what it sounds like. It starts the NERDTree file browser in the current tab, mirroring the state of the other already-open trees. This allows NERDTree to effectively act like a persistent file browser. The only problem is that this command isn&rsquo;t automatically invoked when a new tab is opened, breaking the illusion of a persistent file browser. To fix this, I wrote my own new tab function that checks if NERDTree is already open, and if it is, <code>:NERDTreeMirror</code> is called after the new tab is created. I map this to <code>&lt;leader&gt;t</code>, which in my case, is <code>\t</code>.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-vim" data-lang="vim"><span style="color:#66d9ef">function</span>! <span style="color:#a6e22e">IsNerdTreeEnabled</span>()<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span>  <span style="color:#a6e22e">return</span> <span style="color:#a6e22e">exists</span>(<span style="color:#e6db74">&#39;t:NERDTreeBufName&#39;</span>) &amp;&amp; <span style="color:#a6e22e">bufwinnr</span>(<span style="color:#a6e22e">t</span>:<span style="color:#a6e22e">NERDTreeBufName</span>) != <span style="color:#ae81ff">-1</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">endfunction</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">function</span>! <span style="color:#a6e22e">TreeTab</span>()<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span>  <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">IsNerdTreeEnabled</span>()<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span>    <span style="color:#a6e22e">execute</span> <span style="color:#e6db74">&#39;tabe&#39;</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span>    <span style="color:#a6e22e">execute</span> <span style="color:#e6db74">&#39;NERDTreeMirror&#39;</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span>  <span style="color:#66d9ef">else</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span>    <span style="color:#a6e22e">execute</span> <span style="color:#e6db74">&#39;tabe&#39;</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span>  <span style="color:#66d9ef">endif</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#a6e22e">endfu</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#a6e22e">nnoremap</span> &lt;<span style="color:#a6e22e">leader</span>&gt;<span style="color:#a6e22e">t</span> :<span style="color:#a6e22e">call</span> <span style="color:#a6e22e">TreeTab</span>()&lt;<span style="color:#a6e22e">CR</span>&gt;</code></pre></div>
+<p>My other config settings, in order</p>
+
+<ol>
+<li>Automatically open NERDTree if no arguments are passed into <code>vim</code></li>
+<li>Open NERDTree to the current file when <code>\v</code> is typed</li>
+
+<li><p>Close NERDTree if it is the only window left</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-vim" data-lang="vim"><span style="color:#75715e">&#34; auto-open if no args are set</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#a6e22e">autocmd</span> <span style="color:#a6e22e">VimEnter</span> * <span style="color:#66d9ef">if</span> !<span style="color:#a6e22e">argc</span>() | <span style="color:#a6e22e">NERDTree</span> | <span style="color:#66d9ef">endif</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#75715e">&#34; open on \v</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#a6e22e">nnoremap</span> &lt;<span style="color:#a6e22e">silent</span>&gt; &lt;<span style="color:#a6e22e">Leader</span>&gt;<span style="color:#a6e22e">v</span> :<span style="color:#a6e22e">NERDTreeFind</span>&lt;<span style="color:#a6e22e">CR</span>&gt;<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#75715e">&#34; close if only window left</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#a6e22e">autocmd</span> <span style="color:#a6e22e">bufenter</span> * <span style="color:#66d9ef">if</span> (<span style="color:#a6e22e">winnr</span>(<span style="color:#e6db74">&#34;$&#34;</span>) == <span style="color:#ae81ff">1</span> &amp;&amp; <span style="color:#a6e22e">exists</span>(<span style="color:#e6db74">&#34;b:NERDTree&#34;</span>) &amp;&amp; <span style="color:#a6e22e">b</span>:<span style="color:#a6e22e">NERDTree</span>.<span style="color:#a6e22e">isTabTree</span>()) | <span style="color:#a6e22e">q</span> | <span style="color:#66d9ef">endif</span></code></pre></div></li>
+</ol>
+
+<h2 id="linting">Linting</h2>
+
+<p>I use <a href="https://github.com/w0rp/ale">Ale</a> for linting. It&rsquo;s very fast, and most importantly, it&rsquo;s dumb easy to set up. I&rsquo;ve struggled for hours with Neomake only to get it half-working, but Ale worked out of the box. Just make sure you have <a href="https://github.com/golang/lint">golint</a> installed, and you&rsquo;re good to go.</p>
+
+<p>I also manually configure the error and warning characters and disable the location list for errors. It&rsquo;s more annoying for me than it is helpful.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-vim" data-lang="vim"><span style="color:#75715e">&#34; Error and warning signs.</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">let</span> <span style="color:#a6e22e">g</span>:<span style="color:#a6e22e">ale_sign_error</span> = <span style="color:#e6db74">&#39;⤫&#39;</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">let</span> <span style="color:#a6e22e">g</span>:<span style="color:#a6e22e">ale_sign_warning</span> = <span style="color:#e6db74">&#39;⚠&#39;</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">let</span> <span style="color:#a6e22e">g</span>:<span style="color:#a6e22e">ale_set_loclist</span> = <span style="color:#ae81ff">0</span></code></pre></div>
+<h2 id="autocomplete">Autocomplete</h2>
+
+<p>Autocomplete is notoriously hard to set up in Vim/Neovim, and unfortunately, I don&rsquo;t have silver bullet to fix that. I&rsquo;m using <a href="https://github.com/Shougo/deoplete.nvim">deoplete</a> and <a href="https://github.com/deoplete-plugins/deoplete-go">deoplete-go</a> for better Go support. To use the latter, make sure you have <a href="https://github.com/mdempsky/gocode">gocode</a> installed. I&rsquo;m still having some problems with errors on startup, but the solution is very good once <code>gocode</code> has a chance to start up.</p>
+
+<p>My config options, in order</p>
+
+<ol>
+<li>start deoplete at startup</li>
+<li>allow me to cycle through autocomplete options with the tab key</li>
+
+<li><p>set a order of preference for go autocomplete suggestions</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-vim" data-lang="vim"><span style="color:#75715e">&#34; deoplete settings</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">let</span> <span style="color:#a6e22e">g</span>:<span style="color:#a6e22e">deoplete</span>#<span style="color:#a6e22e">enable_at_startup</span> = <span style="color:#ae81ff">1</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#a6e22e">inoremap</span> &lt;<span style="color:#a6e22e">expr</span>&gt;&lt;<span style="color:#a6e22e">TAB</span>&gt;  <span style="color:#a6e22e">pumvisible</span>() ? <span style="color:#e6db74">&#34;\&lt;C-n&gt;&#34;</span> : <span style="color:#e6db74">&#34;\&lt;TAB&gt;&#34;</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">let</span> <span style="color:#a6e22e">g</span>:<span style="color:#a6e22e">deoplete</span>#<span style="color:#a6e22e">sources</span>#<span style="color:#a6e22e">go</span>#<span style="color:#a6e22e">sort_class</span> = [<span style="color:#e6db74">&#39;package&#39;</span>, <span style="color:#e6db74">&#39;func&#39;</span>, <span style="color:#e6db74">&#39;type&#39;</span>, <span style="color:#e6db74">&#39;var&#39;</span>, <span style="color:#e6db74">&#39;const&#39;</span>]</code></pre></div></li>
+</ol>
+
+<p>A few tips for setup:</p>
+
+<ul>
+<li><p>Make sure the python and python3 Neovim providers are installed. They can be installed with the following commands:</p>
+
+<pre><code>$ pip install neovim
+$ pip3 install neovim
+</code></pre></li>
+
+<li><p>Make sure all necessary Go binaries are installed. Ensure this with the <code>:GoInstallBinaries</code> command in Neovim.</p></li>
+
+<li><p>Add a make instruction in Vundle for <code>deoplete-go</code> so that it gets made properly.</p>
+
+<pre><code>Plugin 'zchee/deoplete-go', { 'do': 'make'}
+</code></pre></li>
+</ul>
+
+<h2 id="misc">Misc</h2>
+
+<p>Some other plugins I use are:</p>
+
+<ul>
+<li><a href="https://github.com/jiangmiao/auto-pairs">auto-pairs</a> for automatically closing parentheses and brackets</li>
+<li><a href="https://github.com/vim-airline/vim-airline">vim-airline</a> for a fantastic statusline</li>
+<li><a href="https://github.com/ryanoasis/vim-devicons">vim-devicons</a> to add type icons to NERDTree</li>
+<li><a href="https://github.com/ctrlpvim/ctrlp.vim">ctrlp.vim</a> for fast fuzzy search</li>
+</ul>
+
+<h2 id="conclusion">Conclusion</h2>
+
+<p>With these plugins, I can now use Neovim without losing any of the functionality I got in VS Code! If you&rsquo;re interested, <a href="https://github.com/Pwpon500/user-sync/blob/master/vimrc">here&rsquo;s my vimrc</a>. Happy coding!</p>
+
+            </div>
+        </article>
+
+        <hr />
+
+        <div class="post-info">
+                <p>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-tag meta-icon"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7" y2="7"></line></svg><span class="tag"><a href="https://pawalt.github.io/tags/go">go</a></span><span class="tag"><a href="https://pawalt.github.io/tags/golang">golang</a></span><span class="tag"><a href="https://pawalt.github.io/tags/vim">vim</a></span><span class="tag"><a href="https://pawalt.github.io/tags/neovim">neovim</a></span><span class="tag"><a href="https://pawalt.github.io/tags/linux">linux</a></span>
+                </p>
+
+            <p><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-file-text"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>952 Words</p>
+
+            <p><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-calendar"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>2019-05-31 20:00 -0400</p>
+        </div>
+
+        
+            <div class="pagination">
+                <div class="pagination__title">
+                    <span class="pagination__title-h"></span>
+                    <hr />
+                </div>
+
+                <div class="pagination__buttons">
+                    
+                        <span class="button previous">
+                            <a href="https://pawalt.github.io/posts/2019/06/nfqueue-and-the-mysterious-reset/">
+                                <span class="button__icon">←</span>
+                                <span class="button__text">NFQUEUE and the Mysterious RESET</span>
+                            </a>
+                        </span>
+                    
+
+                    
+                        <span class="button next">
+                            <a href="https://pawalt.github.io/posts/2019/05/caplance-development-update-1/">
+                                <span class="button__text">Caplance Development Update 1</span>
+                                <span class="button__icon">→</span>
+                            </a>
+                        </span>
+                    
+                </div>
+            </div>
+        
+
+        
+    </main>
+
+            </div>
+
+            
+                <footer class="footer">
+    <div class="footer__inner">
+        <div class="footer__content">
+            <span>&copy; 2019</span>
+            
+            <span>Peyton Walters</span>
+            <span> <a href="https://pawalt.github.io/posts/index.xml" target="_blank" title="rss"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-rss"><path d="M4 11a9 9 0 0 1 9 9"></path><path d="M4 4a16 16 0 0 1 16 16"></path><circle cx="5" cy="19" r="1"></circle></svg></a></span>
+        </div>
+    </div>
+    <div class="footer__inner">
+        <div class="footer__content">
+
+        </div>
+    </div>
+    <div class="footer__inner">
+        <div class="footer__content">
+            <span>Powered by <a href="http://gohugo.io">Hugo</a></span>
+            <span>Made with &#10084; by <a href="https://github.com/rhazdon">rhazdon</a></span>
+        </div>
+    </div>
+</footer>
+
+            
+        </div>
+
+        
+
+
+
+
+<script type="text/javascript" src="/bundle.min.4c3fb12a087ceed4a52cb5d57068a9795c7069617a01ca70f788052ad66e1791779e6c72686e1dc0ca13dc03b0203204b6566bb0dd1ee80de2b7ff4d8fe53db2.js" integrity="sha512-TD&#43;xKgh87tSlLLXVcGipeVxwaWF6Acpw94gFKtZuF5F3nmxyaG4dwMoT3AOwIDIEtlZrsN0e6A3it/9Nj&#43;U9sg=="></script>
+
+
+
+    </body>
+</html>

@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-143263324-1"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-143263324-1');
+</script>
+
+
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="author"
+    content="">
+<meta name="description"
+    content="Recently, my family has been playing Farkle, a simple but difficult-to-analyze dice game. Farkle has the following rules:
+ At the start of the turn, each player must roll the 6 dice. After rolling, the player sets aside all the dice that scored. The player can then choose to roll again to potentially get more points or to take the points they have already scored. If the player rolls and scores no points, they get 0 points and their turn is over." />
+<meta name="keywords" content="im peyton" />
+<meta name="robots" content="noodp" />
+<link rel="canonical" href="https://pawalt.github.io/posts/2018/12/hacking-farkle/" />
+
+
+<title>
+    
+    Hacking Farkle :: Peyton Walters 
+    
+</title>
+
+
+
+<link href="https://cdnjs.cloudflare.com/ajax/libs/flag-icon-css/3.2.1/css/flag-icon.min.css" rel="stylesheet"
+    type="text/css">
+
+
+
+<link rel="stylesheet" href="/main.min.a0a9c9d3ba677039929ecf5c63646dd7732481425a68f9b97486c70fde81475d.css">
+
+
+
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/site.webmanifest">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#252627">
+<link rel="shortcut icon" href="/favicon.ico">
+<meta name="theme-color" content="#252627"><meta itemprop="name" content="Hacking Farkle">
+<meta itemprop="description" content="Who&#39;s laughing now, Dad?">
+
+
+<meta itemprop="datePublished" content="2018-12-29T00:00:00&#43;00:00" />
+<meta itemprop="dateModified" content="2018-12-29T00:00:00&#43;00:00" />
+<meta itemprop="wordCount" content="1774">
+
+
+
+<meta itemprop="keywords" content="go,golang,probability,farkle," />
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:image" content="https://pawalt.github.io/"/>
+
+<meta name="twitter:title" content="Hacking Farkle"/>
+<meta name="twitter:description" content="Who&#39;s laughing now, Dad?"/>
+
+
+
+<meta property="article:section" content="programming" />
+<meta property="article:section" content="post" />
+
+<meta property="article:published_time" content="2018-12-29 00:00:00 &#43;0000 UTC" />
+
+
+
+
+
+
+
+    </head>
+
+    <body class="">
+        <div class="container">
+            <header class="header">
+    <span class="header__inner">
+        <a href="/" style="text-decoration: none;">
+    <div class="logo">
+        
+            <span class="logo__mark">></span>
+            <span class="logo__text">/home/peyton/ $</span>
+            <span class="logo__cursor"></span>
+        
+    </div>
+</a>
+
+
+        <span class="header__right">
+            
+                <nav class="menu">
+    <ul class="menu__inner"><li><a href="https://pawalt.github.io/about">About</a></li><li><a href="https://pawalt.github.io/posts">Blog</a></li>
+    </ul>
+</nav>
+
+                <span class="menu-trigger">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                        <path d="M0 0h24v24H0z" fill="none"/>
+                        <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/>
+                    </svg>
+                </span>
+            
+
+            <span class="theme-toggle"><svg class="theme-toggler" width="24" height="24" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path d="M22 41C32.4934 41 41 32.4934 41 22C41 11.5066 32.4934 3 22
+  3C11.5066 3 3 11.5066 3 22C3 32.4934 11.5066 41 22 41ZM7 22C7
+  13.7157 13.7157 7 22 7V37C13.7157 37 7 30.2843 7 22Z"/>
+</svg>
+</span>
+        </span>
+    </span>
+</header>
+
+
+            <div class="content">
+                
+    <main class="post">
+
+        <div class="post-info">
+            <p><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-clock"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>9 minutes
+
+            
+
+            </p>
+        </div>
+
+        <article>
+            <h1 class="post-title"><a href="https://pawalt.github.io/posts/2018/12/hacking-farkle/">Hacking Farkle</a></h1>
+
+            
+
+            <div class="post-content">
+                
+
+<p>Recently, my family has been playing Farkle, a simple but difficult-to-analyze dice game. Farkle has the following rules:</p>
+
+<ul>
+<li>At the start of the turn, each player must roll the 6 dice.</li>
+<li>After rolling, the player sets aside all the dice that scored.</li>
+<li>The player can then choose to roll again to potentially get more points or to take the points they have already scored.</li>
+<li>If the player rolls and scores no points, they get 0 points and their turn is over.</li>
+<li>If the player uses up all 6 dice, they can recycle all of them and roll all 6 again.</li>
+</ul>
+
+<p>The ways to score are as follows (dice cannot be double counted when scoring):</p>
+
+<table>
+<thead>
+<tr>
+<th>Combination</th>
+<th>Points</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>Single 1</td>
+<td>100</td>
+</tr>
+
+<tr>
+<td>Single 5</td>
+<td>50</td>
+</tr>
+
+<tr>
+<td>Three 1s</td>
+<td>300</td>
+</tr>
+
+<tr>
+<td>Three of any other number</td>
+<td>100 * number</td>
+</tr>
+
+<tr>
+<td>4 of any number</td>
+<td>1000</td>
+</tr>
+
+<tr>
+<td>5 of any number</td>
+<td>2000</td>
+</tr>
+
+<tr>
+<td>6 of any number</td>
+<td>3000</td>
+</tr>
+
+<tr>
+<td>4 of any number and 2 of another</td>
+<td>1500</td>
+</tr>
+
+<tr>
+<td>1-6 straight</td>
+<td>1500</td>
+</tr>
+
+<tr>
+<td>3 pairs</td>
+<td>1500</td>
+</tr>
+
+<tr>
+<td>2 triplets</td>
+<td>2500</td>
+</tr>
+</tbody>
+</table>
+
+<p>The winner is the first person to score 10,000 points. Being the competitive person I am, I decided to give the game some analysis and see if I could determine the expected value for a roll in order to figure out if I should roll or not. I chose to use Go for this because I figured I&rsquo;d be doing a good amount of brute forcing, so I wanted a pretty fast language that I was familiar with. I also just like writing Go.</p>
+
+<h1 id="pure-brute-force">Pure Brute Force</h1>
+
+<p>At first, my idea was to do 2 simple things to generate expected value:
+1. Use backtracking recursion to generate all the possible rolls
+2. Find all the ways to partition the dice in each roll and take the maximum scoring partition</p>
+
+<p>Starting with my backtracking method, I quickly wrote the following</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">backtrack</span>(<span style="color:#a6e22e">rolls</span> []<span style="color:#66d9ef">int</span>, <span style="color:#a6e22e">toRoll</span> <span style="color:#66d9ef">int</span>) <span style="color:#66d9ef">float64</span> {
+	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">toRoll</span> <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span> {
+		<span style="color:#66d9ef">return</span> float64(<span style="color:#a6e22e">maxScore</span>(<span style="color:#a6e22e">rolls</span>))
+	}
+
+	<span style="color:#a6e22e">sum</span> <span style="color:#f92672">:=</span> <span style="color:#ae81ff">0.0</span>
+	<span style="color:#66d9ef">for</span> <span style="color:#a6e22e">i</span> <span style="color:#f92672">:=</span> <span style="color:#ae81ff">1</span>; <span style="color:#a6e22e">i</span> <span style="color:#f92672">&lt;=</span> <span style="color:#ae81ff">6</span>; <span style="color:#a6e22e">i</span><span style="color:#f92672">++</span> {
+		<span style="color:#a6e22e">sum</span> <span style="color:#f92672">+=</span> <span style="color:#a6e22e">backtrack</span>(append(<span style="color:#a6e22e">rolls</span>, <span style="color:#a6e22e">i</span>), <span style="color:#a6e22e">toRoll</span><span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>)
+	}
+	<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">sum</span> <span style="color:#f92672">/</span> <span style="color:#ae81ff">6</span>
+}</code></pre></div>
+<p>The idea here is fairly simple: I loop through all 6 possible die rolls, sum them up, and average them. When I&rsquo;ve used up all of my rolls, I score the resulting dice.</p>
+
+<p>Scoring was not quite as simple as I had hoped, though. Partitioning a set is a little complicated, especially in a language like Go with no real concept of set algebra. The general algorithm I found is as follows:</p>
+
+<ol>
+<li>If there is only one element, return the set containing just that element. Otherwise, do the following:</li>
+<li>Remove the first element from the set and generate the partitions for the remaining set.</li>
+
+<li><p>For each generated partition, do the following</p>
+
+<ol>
+<li>Add the partition containing {removed element} + generated partition</li>
+
+<li><p>For each set in the generated partition:</p>
+
+<ol>
+<li><p>Add the partition containing {removed element + set} + generated partition \ set</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">generatePartitions</span>(<span style="color:#a6e22e">rolls</span> []<span style="color:#66d9ef">int</span>) [][][]<span style="color:#66d9ef">int</span> {
+	<span style="color:#66d9ef">if</span> len(<span style="color:#a6e22e">rolls</span>) <span style="color:#f92672">==</span> <span style="color:#ae81ff">1</span> {
+		<span style="color:#66d9ef">return</span> [][][]<span style="color:#66d9ef">int</span>{{{<span style="color:#a6e22e">rolls</span>[<span style="color:#ae81ff">0</span>]}}}
+	}
+
+	<span style="color:#a6e22e">firstElem</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">rolls</span>[<span style="color:#ae81ff">0</span>]
+	<span style="color:#a6e22e">rest</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">generatePartitions</span>(<span style="color:#a6e22e">rolls</span>[<span style="color:#ae81ff">1</span>:])
+	<span style="color:#a6e22e">toReturn</span> <span style="color:#f92672">:=</span> [][][]<span style="color:#66d9ef">int</span>{}
+
+	<span style="color:#66d9ef">for</span> <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">elem</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">range</span> <span style="color:#a6e22e">rest</span> {
+		<span style="color:#a6e22e">toReturn</span> = append(<span style="color:#a6e22e">toReturn</span>, append(<span style="color:#a6e22e">elem</span>, []<span style="color:#66d9ef">int</span>{<span style="color:#a6e22e">firstElem</span>}))
+
+		<span style="color:#66d9ef">for</span> <span style="color:#a6e22e">i</span>, <span style="color:#a6e22e">set</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">range</span> <span style="color:#a6e22e">elem</span> {
+			<span style="color:#a6e22e">removed</span> <span style="color:#f92672">:=</span> make([][]<span style="color:#66d9ef">int</span>, len(<span style="color:#a6e22e">elem</span>))
+			copy(<span style="color:#a6e22e">removed</span>, <span style="color:#a6e22e">elem</span>[:])
+			<span style="color:#a6e22e">removed</span> = append(<span style="color:#a6e22e">removed</span>[:<span style="color:#a6e22e">i</span>], <span style="color:#a6e22e">removed</span>[<span style="color:#a6e22e">i</span><span style="color:#f92672">+</span><span style="color:#ae81ff">1</span>:]<span style="color:#f92672">...</span>)
+			<span style="color:#a6e22e">toReturn</span> = append(<span style="color:#a6e22e">toReturn</span>, append(<span style="color:#a6e22e">removed</span>, append(<span style="color:#a6e22e">set</span>, <span style="color:#a6e22e">firstElem</span>)))
+		}
+	}
+
+	<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">toReturn</span>
+}</code></pre></div></li>
+</ol></li>
+</ol></li>
+</ol>
+
+<p>Then, I take all these partitions, score each one, and return the max of all the scores:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">maxScore</span>(<span style="color:#a6e22e">rolls</span> []<span style="color:#66d9ef">int</span>) <span style="color:#66d9ef">int</span> {
+	<span style="color:#a6e22e">max</span> <span style="color:#f92672">:=</span> <span style="color:#ae81ff">0</span>
+	<span style="color:#a6e22e">partitions</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">generatePartitions</span>(<span style="color:#a6e22e">rolls</span>)
+	<span style="color:#66d9ef">for</span> <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">partition</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">range</span> <span style="color:#a6e22e">partitions</span> {
+		<span style="color:#a6e22e">score</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">scoreSuperSet</span>(<span style="color:#a6e22e">partition</span>)
+		<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">score</span> &gt; <span style="color:#a6e22e">max</span> {
+			<span style="color:#a6e22e">max</span> = <span style="color:#a6e22e">score</span>
+		}
+	}
+
+	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">max</span> &gt; <span style="color:#ae81ff">0</span> {
+		<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">curScore</span> <span style="color:#f92672">+</span> <span style="color:#a6e22e">max</span>
+	}
+	<span style="color:#66d9ef">return</span> <span style="color:#ae81ff">0</span>
+}</code></pre></div>
+<p>After writing this code, however, I realized that it had quite a few problems:</p>
+
+<ul>
+<li>Backtracking could have to check up to 6^6 (46,656) rolls</li>
+<li>Each roll would have to be partitioned in every way possible. This follows the Bell numbers, so in the worst case, there are 203 possible partitions to check. Combined with the previous number, in the worst case, I have to check 947,1168 partitions.</li>
+<li>I&rsquo;m only accounting for one roll! The part of Farkle that makes it so hard to analyze is the ability to roll multiple times, but if you take a look at my code, I&rsquo;m only checking the possibilities for the direct next roll.</li>
+</ul>
+
+<p>Let&rsquo;s make a checklist for things to fix:</p>
+
+<ul class="task-list">
+<li><label><input type="checkbox" disabled class="task-list-item"> Be smarter than backtracking all possibilities</label></li>
+<li><label><input type="checkbox" disabled class="task-list-item"> Find a way to score a roll in constant time</label></li>
+<li><label><input type="checkbox" disabled class="task-list-item"> Account for possibly making multiple more rolls</label></li>
+</ul>
+
+<h1 id="improving-scoring">Improving Scoring</h1>
+
+<p>Something didn&rsquo;t sit right with me regarding how I did scoring. It seemed totally wrong that I would need to generate up to 203 combinations and take their max score. After all, I don&rsquo;t consider all possible combinations when scoring my rolls playing with my family. I group the dice according to their numbers and see if the groups fit into any of the scoring categories. Turns out, that works pretty well for real scoring. Here&rsquo;s what I came up with:</p>
+
+<p>1. Go through all the dice and record how many of each number there are. Also record which dice appear with which frequency</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">scoreRoll</span>(<span style="color:#a6e22e">rolls</span> []<span style="color:#66d9ef">int</span>, <span style="color:#a6e22e">score</span> <span style="color:#66d9ef">int</span>, <span style="color:#a6e22e">depth</span> <span style="color:#66d9ef">int</span>) <span style="color:#66d9ef">float64</span> {
+  <span style="color:#66d9ef">var</span> <span style="color:#a6e22e">occurences</span> [<span style="color:#ae81ff">6</span>]<span style="color:#66d9ef">int</span>
+  <span style="color:#66d9ef">for</span> <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">elem</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">range</span> <span style="color:#a6e22e">rolls</span> {
+    <span style="color:#a6e22e">occurences</span>[<span style="color:#a6e22e">elem</span><span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>]<span style="color:#f92672">++</span>
+  }
+  <span style="color:#66d9ef">var</span> <span style="color:#a6e22e">frequencies</span> [<span style="color:#ae81ff">7</span>][]<span style="color:#66d9ef">int</span>
+
+  <span style="color:#66d9ef">for</span> <span style="color:#a6e22e">i</span> <span style="color:#f92672">:=</span> <span style="color:#ae81ff">0</span>; <span style="color:#a6e22e">i</span> &lt; <span style="color:#ae81ff">6</span>; <span style="color:#a6e22e">i</span><span style="color:#f92672">++</span> {
+    <span style="color:#a6e22e">occurs</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">occurences</span>[<span style="color:#a6e22e">i</span>]
+    <span style="color:#a6e22e">frequencies</span>[<span style="color:#a6e22e">occurs</span>] = append(<span style="color:#a6e22e">frequencies</span>[<span style="color:#a6e22e">occurs</span>], <span style="color:#a6e22e">i</span>)
+  }
+<span style="color:#f92672">...</span></code></pre></div>
+<p>2. Compare the frequencies against the rules of the game</p>
+
+<p>I won&rsquo;t include this part since it&rsquo;s just a series of if/else statements. You can find the code at this iteration <a href="https://github.com/Pwpon500/farkle-odds/blob/fb544b026a537c3f3d75a7d9c08e871c545c0b04/main.go">here</a> if interested.</p>
+
+<p>3. Count the number of remaining 1s and 5s</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#66d9ef">if</span> <span style="color:#a6e22e">occurences</span>[<span style="color:#ae81ff">0</span>] &lt; <span style="color:#ae81ff">3</span> <span style="color:#f92672">&amp;&amp;</span> <span style="color:#a6e22e">countIndiv</span> {
+<span style="color:#a6e22e">toReturn</span> <span style="color:#f92672">+=</span> float64(<span style="color:#ae81ff">100</span> <span style="color:#f92672">*</span> <span style="color:#a6e22e">occurences</span>[<span style="color:#ae81ff">0</span>])
+<span style="color:#a6e22e">numUsed</span> <span style="color:#f92672">+=</span> <span style="color:#a6e22e">occurences</span>[<span style="color:#ae81ff">0</span>]
+}
+<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">occurences</span>[<span style="color:#ae81ff">4</span>] &lt; <span style="color:#ae81ff">3</span> <span style="color:#f92672">&amp;&amp;</span> <span style="color:#a6e22e">countIndiv</span> {
+<span style="color:#a6e22e">toReturn</span> <span style="color:#f92672">+=</span> float64(<span style="color:#ae81ff">50</span> <span style="color:#f92672">*</span> <span style="color:#a6e22e">occurences</span>[<span style="color:#ae81ff">4</span>])
+<span style="color:#a6e22e">numUsed</span> <span style="color:#f92672">+=</span> <span style="color:#a6e22e">occurences</span>[<span style="color:#ae81ff">4</span>]
+}</code></pre></div>
+<p>4. If there is no score, the player gets no points. Otherwise, they get their scored points plus the score they already have</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#66d9ef">if</span> <span style="color:#a6e22e">toReturn</span> <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span> {
+	<span style="color:#66d9ef">return</span> <span style="color:#ae81ff">0</span>
+}
+<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">toReturn</span> <span style="color:#f92672">+</span> float64(<span style="color:#a6e22e">score</span>)</code></pre></div>
+<p>Now, I have a scoring algorithm that will work in constant time. Let&rsquo;s update that checklist:</p>
+
+<ul class="task-list">
+<li><label><input type="checkbox" disabled class="task-list-item"> Be smarter than backtracking all possibilities</label></li>
+<li><label><input type="checkbox" checked disabled class="task-list-item"> Find a way to score a roll in constant time</label></li>
+<li><label><input type="checkbox" disabled class="task-list-item"> Account for possibly making multiple more rolls</label></li>
+</ul>
+
+<h1 id="more-backtracking">More Backtracking</h1>
+
+<p>Taking extra rolls into account is actually pretty simple in theory. When you score each roll, take the expected value of rolling again. If that expected value is higher than what you&rsquo;ve already scored, use it. Otherwise, keep your current score. This can be simply implemented as follows:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#a6e22e">expectedRoll</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">backtrack</span>([]<span style="color:#66d9ef">int</span>{}, <span style="color:#a6e22e">numLeft</span>, int(<span style="color:#a6e22e">toReturn</span>))
+<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">expectedRoll</span> &gt; float64(<span style="color:#a6e22e">toReturn</span>) {
+	<span style="color:#a6e22e">toReturn</span> = <span style="color:#a6e22e">expectedRoll</span>
+}</code></pre></div>
+<p>I ran this code and waited. I waited some more, and I waited even longer. Looking back, I committed the cardinal sin of recursion: recursion without a base case. Each roll would check the expected value of another roll, and the cycle would infinitely repeat. To fix this, I added a simple <code>depth</code> parameter to backtrack and implemented it as follows:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">backtrack</span>(<span style="color:#a6e22e">rolls</span> []<span style="color:#66d9ef">int</span>, <span style="color:#a6e22e">toRoll</span> <span style="color:#66d9ef">int</span>, <span style="color:#a6e22e">score</span> <span style="color:#66d9ef">int</span>, <span style="color:#a6e22e">depth</span> <span style="color:#66d9ef">int</span>) <span style="color:#66d9ef">float64</span> {
+	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">depth</span> <span style="color:#f92672">&gt;=</span> <span style="color:#a6e22e">maxDepth</span> {
+		<span style="color:#66d9ef">return</span> <span style="color:#ae81ff">0</span>
+	}</code></pre></div>
+<p><code>maxDepth</code> is just a global variable that the user sets to define how deep they want to recurse. I then pass depth into my scoring function and change my expected roll call to implement depth:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#a6e22e">expectedRoll</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">backtrack</span>([]<span style="color:#66d9ef">int</span>{}, <span style="color:#a6e22e">numLeft</span>, int(<span style="color:#a6e22e">toReturn</span>), <span style="color:#a6e22e">depth</span><span style="color:#f92672">+</span><span style="color:#ae81ff">1</span>)</code></pre></div>
+<p>Now, theoretically, I have an algorithm that&rsquo;ll go to whatever arbitrary depth I want. However, upon running this, I can only go to a depth of 2 before the program explodes running time. Since I&rsquo;m backtracking, each added level of depth makes the running time go up exponentially. So I&rsquo;ve fixed one problem, but just amplified another. Let&rsquo;s update the checklist:</p>
+
+<ul class="task-list">
+<li><label><input type="checkbox" disabled class="task-list-item"> Be smarter than backtracking all possibilities</label></li>
+<li><label><input type="checkbox" checked disabled class="task-list-item"> Find a way to score a roll in constant time</label></li>
+<li><label><input type="checkbox" checked disabled class="task-list-item"> Account for possibly making multiple more rolls</label></li>
+</ul>
+
+<h1 id="finding-a-model">Finding A Model</h1>
+
+<p>Faced with no idea for how to do this without backtracking, I had the idea of dynamic programming. If I could just find a decent model for the expected values, I could get rid of all the costly backtracking. I added support for command line flags and generated all the expected values from 1 to 400 with the following command (this is in fish but a similar thing can be done in bash):</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#66d9ef">for</span> x in <span style="color:#f92672">(</span>seq <span style="color:#ae81ff">400</span><span style="color:#f92672">)</span>
+    ./farkle-odds -dice <span style="color:#ae81ff">1</span> -score $x
+end</code></pre></div>
+<p>I used plot.ly to plot all this out and saw something pretty amazing:</p>
+
+<p><img src="/img/depth1_farkle.png" alt="Farkle at depth 1" />{:width=&ldquo;750px&rdquo;}</p>
+
+<p>It&rsquo;s linear! Realizing this, I generated lines of best fit for each of the numbers of dice. I then added the <code>approxScore</code> method in to use the lines of best fit to approximate the expected value of a score:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">approxScore</span>(<span style="color:#a6e22e">toRoll</span> <span style="color:#66d9ef">int</span>, <span style="color:#a6e22e">score</span> <span style="color:#66d9ef">int</span>) <span style="color:#66d9ef">float64</span> {
+	<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">mVals</span>[<span style="color:#a6e22e">toRoll</span><span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>]<span style="color:#f92672">*</span>float64(<span style="color:#a6e22e">score</span>) <span style="color:#f92672">+</span> <span style="color:#a6e22e">bVals</span>[<span style="color:#a6e22e">toRoll</span><span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>]
+}</code></pre></div>
+<h1 id="generating-lines">Generating Lines</h1>
+
+<p>After some plotting of greater depths, I concluded that the greater depths are <em>almost</em> linear, and any deviations from a linear model were not significant enough to substantially impact the generated expected values. Using this linearity to my advantage, I used the following algorithm to generate coefficients for a linear model for any arbitrary depth:</p>
+
+<ol>
+<li>Use <code>backtrack</code> to find 2 expected values</li>
+<li>Use simple algebra to find the <code>m</code> and <code>b</code> values for the line between those points</li>
+<li>Record those <code>m</code> and <code>b</code> values in JSON to a file</li>
+<li>Replace the old <code>m</code> and <code>b</code> values with the new ones and repeat the process</li>
+</ol>
+
+<p>Here&rsquo;s what that looks like in actual code:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">generateCoeffs</span>() {
+	<span style="color:#66d9ef">for</span> <span style="color:#a6e22e">i</span> <span style="color:#f92672">:=</span> <span style="color:#ae81ff">1</span>; <span style="color:#a6e22e">i</span> <span style="color:#f92672">&lt;=</span> <span style="color:#ae81ff">50</span>; <span style="color:#a6e22e">i</span><span style="color:#f92672">++</span> {
+		<span style="color:#a6e22e">newM</span> <span style="color:#f92672">:=</span> []<span style="color:#66d9ef">float64</span>{}
+		<span style="color:#a6e22e">newB</span> <span style="color:#f92672">:=</span> []<span style="color:#66d9ef">float64</span>{}
+		<span style="color:#66d9ef">for</span> <span style="color:#a6e22e">j</span> <span style="color:#f92672">:=</span> <span style="color:#ae81ff">1</span>; <span style="color:#a6e22e">j</span> <span style="color:#f92672">&lt;=</span> <span style="color:#ae81ff">6</span>; <span style="color:#a6e22e">j</span><span style="color:#f92672">++</span> {
+			<span style="color:#75715e">// find high and low vals for this iteration
+</span><span style="color:#75715e"></span>			<span style="color:#a6e22e">lowVal</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">backtrack</span>([]<span style="color:#66d9ef">int</span>{}, <span style="color:#a6e22e">j</span>, <span style="color:#ae81ff">0</span>)
+			<span style="color:#a6e22e">highVal</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">backtrack</span>([]<span style="color:#66d9ef">int</span>{}, <span style="color:#a6e22e">j</span>, <span style="color:#ae81ff">400</span>)
+			<span style="color:#75715e">// use high and low vals to generate line
+</span><span style="color:#75715e"></span>			<span style="color:#a6e22e">newM</span> = append(<span style="color:#a6e22e">newM</span>, (<span style="color:#a6e22e">highVal</span><span style="color:#f92672">-</span><span style="color:#a6e22e">lowVal</span>)<span style="color:#f92672">/</span><span style="color:#ae81ff">400</span>)
+			<span style="color:#a6e22e">newB</span> = append(<span style="color:#a6e22e">newB</span>, <span style="color:#a6e22e">lowVal</span>)
+		}
+		<span style="color:#a6e22e">coeffs</span>.<span style="color:#a6e22e">MCoeffs</span> = <span style="color:#a6e22e">newM</span>
+		<span style="color:#a6e22e">coeffs</span>.<span style="color:#a6e22e">BCoeffs</span> = <span style="color:#a6e22e">newB</span>
+		<span style="color:#a6e22e">writeVals</span>(<span style="color:#a6e22e">newM</span>, <span style="color:#a6e22e">newB</span>, <span style="color:#a6e22e">i</span>)
+	}
+	<span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Println</span>(<span style="color:#e6db74">&#34;Coefficients generated and written&#34;</span>)
+}</code></pre></div>
+<p>Now, we can finally check off that last box!</p>
+
+<ul class="task-list">
+<li><label><input type="checkbox" checked disabled class="task-list-item"> Be smarter than backtracking all possibilities</label></li>
+<li><label><input type="checkbox" checked disabled class="task-list-item"> Find a way to score a roll in constant time</label></li>
+<li><label><input type="checkbox" checked disabled class="task-list-item"> Account for possibly making multiple more rolls</label></li>
+</ul>
+
+<h1 id="conclusion">Conclusion</h1>
+
+<p>After some refactoring, I&rsquo;m really happy with the result of this little experiment. The linear model isn&rsquo;t a perfect fit for the expected values, but it&rsquo;s damn good and takes constant time to run.</p>
+
+<p>If you&rsquo;re interested in seeing what the code looks like, it can be found <a href="https://github.com/Pwpon500/farkle-odds">here</a>. Make sure to let me know if there are any improvements I can make.</p>
+
+<p>Also, here is some of the plotted data of the expected values for different dice rolls:</p>
+
+<p><a href="https://plot.ly/~Pwpon500/1">Depth 1</a> <a href="https://plot.ly/~Pwpon500/3">Depth 2</a></p>
+
+            </div>
+        </article>
+
+        <hr />
+
+        <div class="post-info">
+                <p>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-tag meta-icon"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7" y2="7"></line></svg><span class="tag"><a href="https://pawalt.github.io/tags/go">go</a></span><span class="tag"><a href="https://pawalt.github.io/tags/golang">golang</a></span><span class="tag"><a href="https://pawalt.github.io/tags/probability">probability</a></span><span class="tag"><a href="https://pawalt.github.io/tags/farkle">farkle</a></span>
+                </p>
+
+            <p><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-file-text"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>1774 Words</p>
+
+            <p><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-calendar"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>2018-12-28 19:00 -0500</p>
+        </div>
+
+        
+            <div class="pagination">
+                <div class="pagination__title">
+                    <span class="pagination__title-h"></span>
+                    <hr />
+                </div>
+
+                <div class="pagination__buttons">
+                    
+                        <span class="button previous">
+                            <a href="https://pawalt.github.io/posts/2019/04/on-the-value-of-formal-education/">
+                                <span class="button__icon">←</span>
+                                <span class="button__text">On the Value of Formal Education</span>
+                            </a>
+                        </span>
+                    
+
+                    
+                        <span class="button next">
+                            <a href="https://pawalt.github.io/posts/2018/01/vpls-with-openbsd/">
+                                <span class="button__text">VPLS with OpenBSD</span>
+                                <span class="button__icon">→</span>
+                            </a>
+                        </span>
+                    
+                </div>
+            </div>
+        
+
+        
+    </main>
+
+            </div>
+
+            
+                <footer class="footer">
+    <div class="footer__inner">
+        <div class="footer__content">
+            <span>&copy; 2019</span>
+            
+            <span>Peyton Walters</span>
+            <span> <a href="https://pawalt.github.io/posts/index.xml" target="_blank" title="rss"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-rss"><path d="M4 11a9 9 0 0 1 9 9"></path><path d="M4 4a16 16 0 0 1 16 16"></path><circle cx="5" cy="19" r="1"></circle></svg></a></span>
+        </div>
+    </div>
+    <div class="footer__inner">
+        <div class="footer__content">
+
+        </div>
+    </div>
+    <div class="footer__inner">
+        <div class="footer__content">
+            <span>Powered by <a href="http://gohugo.io">Hugo</a></span>
+            <span>Made with &#10084; by <a href="https://github.com/rhazdon">rhazdon</a></span>
+        </div>
+    </div>
+</footer>
+
+            
+        </div>
+
+        
+
+
+
+
+<script type="text/javascript" src="/bundle.min.4c3fb12a087ceed4a52cb5d57068a9795c7069617a01ca70f788052ad66e1791779e6c72686e1dc0ca13dc03b0203204b6566bb0dd1ee80de2b7ff4d8fe53db2.js" integrity="sha512-TD&#43;xKgh87tSlLLXVcGipeVxwaWF6Acpw94gFKtZuF5F3nmxyaG4dwMoT3AOwIDIEtlZrsN0e6A3it/9Nj&#43;U9sg=="></script>
+
+
+
+    </body>
+</html>

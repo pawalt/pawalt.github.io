@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-143263324-1"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-143263324-1');
+</script>
+
+
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="author"
+    content="">
+<meta name="description"
+    content="After countless hours spent reading the GoDocs, googling &amp;ldquo;gre packets golang&amp;rdquo;, and staring at the term SIGSEV, I&amp;rsquo;ve got an update! I&amp;rsquo;ve made pretty significant progress on the actual load balancer, implementing most of the base functionality. So far, the load balancer can:
+ listen for and ingest whole IP packets select the backend for a packet based on a combination of IP and source port encapsulate packets in UDP and send them to the appropriate backend attach a specified virtual IP  I&amp;rsquo;ve also implemented some extremely rudimentary testing and setup, but I&amp;rsquo;m going to rework those once the project structure solidifies some more." />
+<meta name="keywords" content="im peyton" />
+<meta name="robots" content="noodp" />
+<link rel="canonical" href="https://pawalt.github.io/posts/2019/05/caplance-development-update-1/" />
+
+
+<title>
+    
+    Caplance Development Update 1 :: Peyton Walters 
+    
+</title>
+
+
+
+<link href="https://cdnjs.cloudflare.com/ajax/libs/flag-icon-css/3.2.1/css/flag-icon.min.css" rel="stylesheet"
+    type="text/css">
+
+
+
+<link rel="stylesheet" href="/main.min.a0a9c9d3ba677039929ecf5c63646dd7732481425a68f9b97486c70fde81475d.css">
+
+
+
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/site.webmanifest">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#252627">
+<link rel="shortcut icon" href="/favicon.ico">
+<meta name="theme-color" content="#252627"><meta itemprop="name" content="Caplance Development Update 1">
+<meta itemprop="description" content="It&#39;s about damn time">
+
+
+<meta itemprop="datePublished" content="2019-05-25T00:00:00&#43;00:00" />
+<meta itemprop="dateModified" content="2019-05-25T00:00:00&#43;00:00" />
+<meta itemprop="wordCount" content="939">
+
+
+
+<meta itemprop="keywords" content="go,golang,load balancing,networking,linux,caplance," />
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:image" content="https://pawalt.github.io/"/>
+
+<meta name="twitter:title" content="Caplance Development Update 1"/>
+<meta name="twitter:description" content="It&#39;s about damn time"/>
+
+
+
+<meta property="article:section" content="networking" />
+<meta property="article:section" content="programming" />
+<meta property="article:section" content="post" />
+
+<meta property="article:published_time" content="2019-05-25 00:00:00 &#43;0000 UTC" />
+
+
+
+
+
+
+
+    </head>
+
+    <body class="">
+        <div class="container">
+            <header class="header">
+    <span class="header__inner">
+        <a href="/" style="text-decoration: none;">
+    <div class="logo">
+        
+            <span class="logo__mark">></span>
+            <span class="logo__text">/home/peyton/ $</span>
+            <span class="logo__cursor"></span>
+        
+    </div>
+</a>
+
+
+        <span class="header__right">
+            
+                <nav class="menu">
+    <ul class="menu__inner"><li><a href="https://pawalt.github.io/about">About</a></li><li><a href="https://pawalt.github.io/posts">Blog</a></li>
+    </ul>
+</nav>
+
+                <span class="menu-trigger">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                        <path d="M0 0h24v24H0z" fill="none"/>
+                        <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/>
+                    </svg>
+                </span>
+            
+
+            <span class="theme-toggle"><svg class="theme-toggler" width="24" height="24" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path d="M22 41C32.4934 41 41 32.4934 41 22C41 11.5066 32.4934 3 22
+  3C11.5066 3 3 11.5066 3 22C3 32.4934 11.5066 41 22 41ZM7 22C7
+  13.7157 13.7157 7 22 7V37C13.7157 37 7 30.2843 7 22Z"/>
+</svg>
+</span>
+        </span>
+    </span>
+</header>
+
+
+            <div class="content">
+                
+    <main class="post">
+
+        <div class="post-info">
+            <p><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-clock"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>5 minutes
+
+            
+
+            </p>
+        </div>
+
+        <article>
+            <h1 class="post-title"><a href="https://pawalt.github.io/posts/2019/05/caplance-development-update-1/">Caplance Development Update 1</a></h1>
+
+            
+
+            <div class="post-content">
+                
+
+<p>After countless hours spent reading the GoDocs, googling &ldquo;gre packets golang&rdquo;, and staring at the term SIGSEV, I&rsquo;ve got an update! I&rsquo;ve made pretty significant progress on the actual load balancer, implementing most of the base functionality. So far, the load balancer can:</p>
+
+<ul>
+<li>listen for and ingest whole IP packets</li>
+<li>select the backend for a packet based on a combination of IP and source port</li>
+<li>encapsulate packets in UDP and send them to the appropriate backend</li>
+<li>attach a specified virtual IP</li>
+</ul>
+
+<p>I&rsquo;ve also implemented some extremely rudimentary testing and setup, but I&rsquo;m going to rework those once the project structure solidifies some more.</p>
+
+<p>Here&rsquo;s some detail on the more interesting technical parts of the project so far:</p>
+
+<h2 id="listening">Listening</h2>
+
+<p>I initially listened for packets with a go interface for pcap, a packet capture protocol that allows the user to select an interface and &ldquo;sniff&rdquo; its packets. If you&rsquo;ve used tcpdump, you&rsquo;ve used pcap. With pcap, I could tap into the interface that the virtual IP was using and filter for only the packets destined for the VIP. Then, I could read the packets right off the interface. There were two problems with this approach:</p>
+
+<ol>
+<li>I wasn&rsquo;t actually doing listening in a conventional way. If you pull up <code>ss -4l</code>, you wouldn&rsquo;t see any entry for Caplance (because I&rsquo;m not technically listening. I&rsquo;m creating a TAP device). That&rsquo;s a pretty big problem just because I want Caplance to work well with conventional Unix tools.</li>
+<li>Closing a pcap device from go is stupid slow. In my tests, closing the device took upwards of 30 seconds, and the device needs to be closed before Caplance can terminate. This is unacceptable, and it was ultimately what did in the pcap approach for me.</li>
+</ol>
+
+<p>Enter <a href="https://golang.org/pkg/net/#IPConn">IPConn</a>. IPConn is a listener for go that listens at the IP level. That means, when you do a read off of it, it reads in from the IP layer down, exactly what I want. Since it&rsquo;s a built-in go listener, it also closes extremely quickly. Whereas before I needed to set up a filter, find the appropriate device, etc., with IPConn, my listening can be reduced to this simple function:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">b</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Balancer</span>) <span style="color:#a6e22e">listenWithConn</span>(<span style="color:#a6e22e">conn</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">net</span>.<span style="color:#a6e22e">IPConn</span>, <span style="color:#a6e22e">pool</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">sync</span>.<span style="color:#a6e22e">Pool</span>) {
+	<span style="color:#66d9ef">for</span> {
+		<span style="color:#a6e22e">buf</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">pool</span>.<span style="color:#a6e22e">Get</span>().([]<span style="color:#66d9ef">byte</span>)
+		<span style="color:#a6e22e">n</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">conn</span>.<span style="color:#a6e22e">Read</span>(<span style="color:#a6e22e">buf</span>)
+		<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+			<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Println</span>(<span style="color:#e6db74">&#34;could not read from connection&#34;</span>)
+			<span style="color:#66d9ef">continue</span>
+		}
+		<span style="color:#a6e22e">toSend</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">rawPacket</span>{<span style="color:#a6e22e">buf</span>, <span style="color:#a6e22e">n</span>}
+		<span style="color:#a6e22e">b</span>.<span style="color:#a6e22e">packets</span> <span style="color:#f92672">&lt;-</span> <span style="color:#a6e22e">toSend</span>
+	}
+}</code></pre></div>
+<p>To provide a bit of context around this function, <code>pool</code> is a pool of buffers that the IPConn can use to store data from reads. <code>b.packets</code> is a channel (concurrency-safe queue) of packet for the worker goroutines to read packets off of.</p>
+
+<h2 id="packet-forwarding">Packet Forwarding</h2>
+
+<p>While I would to use normal routing rules to route incoming packets over GRE tunnels to backends, that won&rsquo;t work here. If we were always forwarding the same IP range of packets to the same backends, we could use iptables, but for this project, we want to use consistent hashing. Because of this, we have to write listening (as seen above) and packet forwarding ourselves.</p>
+
+<p>First, it&rsquo;s important to note that there&rsquo;s no good GRE library for go right now. The only real way to create a GRE tunnel in go is to make calls to the kernel to tell it to construct one. There&rsquo;s no way to have a GRE object, for instance, that you can just write data to in the same way you do with a TCP connection. I may take this up as a future project.</p>
+
+<p>Because of the lack of a library, I would have to write data directly to the wire. My initial idea was to (again) use pcap. My algorithm was as follows:</p>
+
+<ol>
+<li>Create GRE tunnel to backend (with netlink)</li>
+<li>Manually create GRE header for backend</li>
+<li>For each packet destined for the backend:
+
+<ol>
+<li>Create appropriate GRE header for the packet</li>
+<li>Marshal GRE header into a <code>[]byte</code></li>
+<li>Append the packet onto the marshalled header</li>
+<li>Perform some crazy pcap magic to figure out mac addresses of the next hop on the way to the backend</li>
+<li>Write the encapsulated packet to the right physical interface</li>
+</ol></li>
+</ol>
+
+<p>Ya know, now that I type it all out, that was an awful plan.</p>
+
+<p>After a lot of frustration and reflection, I asked myself the pivotal question, &ldquo;Why am I so set on GRE in the first place?&rdquo; The only reason I could come up with was that Google used it, and that&rsquo;s a pretty bad reason. Thinking about it more, I realized I could just use a UDP connection in place of GRE and achieve the same results I wanted.</p>
+
+<p>Now, my algorithm is as follows:</p>
+
+<ol>
+<li>Dial a UDP connection to each backend</li>
+<li>Write each packet to the appropriate backend with the built-in <code>Write(data []byte)</code> method</li>
+</ol>
+
+<p>That&rsquo;s a wee bit simpler. It&rsquo;s not as easy to show in a single piece of code as listening, but it wasn&rsquo;t too hard to write.</p>
+
+<h2 id="graceful-stop">Graceful Stop</h2>
+
+<p>I implemented graceful stop, which turned out to be way harder than I expected. I&rsquo;m anticipating writing about it in the future, though, so I&rsquo;m not going to include details on how it works right now. It&rsquo;s also very likely that I&rsquo;ll change how it&rsquo;s implemented. If you want to see the current iteration of it right now, <a href="https://github.com/Pwpon500/caplance/blob/4887f8c6230fbe062660c300df0a81f02450f064/balancer/control.go#L80">you can find the code here</a>.</p>
+
+<h1 id="future-work">Future Work</h1>
+
+<p>Obviously, I&rsquo;m not done yet. I still need to implement the following:</p>
+
+<ul>
+<li>Configuration file</li>
+<li>Environment variable configuration</li>
+<li>Client registration</li>
+<li>Client health checks</li>
+<li>Client packet injestion</li>
+<li>Optimization</li>
+<li>More that I don&rsquo;t even know exists yet</li>
+</ul>
+
+<p>I&rsquo;m crazy excited to get started on all those items, and I can&rsquo;t wait to write about them once I figure them out.</p>
+
+            </div>
+        </article>
+
+        <hr />
+
+        <div class="post-info">
+                <p>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-tag meta-icon"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7" y2="7"></line></svg><span class="tag"><a href="https://pawalt.github.io/tags/go">go</a></span><span class="tag"><a href="https://pawalt.github.io/tags/golang">golang</a></span><span class="tag"><a href="https://pawalt.github.io/tags/load-balancing">load balancing</a></span><span class="tag"><a href="https://pawalt.github.io/tags/networking">networking</a></span><span class="tag"><a href="https://pawalt.github.io/tags/linux">linux</a></span><span class="tag"><a href="https://pawalt.github.io/tags/caplance">caplance</a></span>
+                </p>
+
+            <p><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-file-text"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>939 Words</p>
+
+            <p><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-calendar"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>2019-05-24 20:00 -0400</p>
+        </div>
+
+        
+            <div class="pagination">
+                <div class="pagination__title">
+                    <span class="pagination__title-h"></span>
+                    <hr />
+                </div>
+
+                <div class="pagination__buttons">
+                    
+                        <span class="button previous">
+                            <a href="https://pawalt.github.io/posts/2019/06/my-neovim-go-setup/">
+                                <span class="button__icon">←</span>
+                                <span class="button__text">My Neovim Go Setup</span>
+                            </a>
+                        </span>
+                    
+
+                    
+                        <span class="button next">
+                            <a href="https://pawalt.github.io/posts/2019/05/constant-improvement-a-reflection/">
+                                <span class="button__text">Constant Improvement - A Reflection</span>
+                                <span class="button__icon">→</span>
+                            </a>
+                        </span>
+                    
+                </div>
+            </div>
+        
+
+        
+    </main>
+
+            </div>
+
+            
+                <footer class="footer">
+    <div class="footer__inner">
+        <div class="footer__content">
+            <span>&copy; 2019</span>
+            
+            <span>Peyton Walters</span>
+            <span> <a href="https://pawalt.github.io/posts/index.xml" target="_blank" title="rss"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-rss"><path d="M4 11a9 9 0 0 1 9 9"></path><path d="M4 4a16 16 0 0 1 16 16"></path><circle cx="5" cy="19" r="1"></circle></svg></a></span>
+        </div>
+    </div>
+    <div class="footer__inner">
+        <div class="footer__content">
+
+        </div>
+    </div>
+    <div class="footer__inner">
+        <div class="footer__content">
+            <span>Powered by <a href="http://gohugo.io">Hugo</a></span>
+            <span>Made with &#10084; by <a href="https://github.com/rhazdon">rhazdon</a></span>
+        </div>
+    </div>
+</footer>
+
+            
+        </div>
+
+        
+
+
+
+
+<script type="text/javascript" src="/bundle.min.4c3fb12a087ceed4a52cb5d57068a9795c7069617a01ca70f788052ad66e1791779e6c72686e1dc0ca13dc03b0203204b6566bb0dd1ee80de2b7ff4d8fe53db2.js" integrity="sha512-TD&#43;xKgh87tSlLLXVcGipeVxwaWF6Acpw94gFKtZuF5F3nmxyaG4dwMoT3AOwIDIEtlZrsN0e6A3it/9Nj&#43;U9sg=="></script>
+
+
+
+    </body>
+</html>

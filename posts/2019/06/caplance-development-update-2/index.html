@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-143263324-1"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-143263324-1');
+</script>
+
+
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="author"
+    content="">
+<meta name="description"
+    content="I&amp;rsquo;m back! Over the past few weeks, I&amp;rsquo;ve had much more time to work on Caplance than I had in the prior months, so, naturally, a ton of work has gotten done in these few weeks. Specifically, I&amp;rsquo;ve implemented the following functionality:
+ Backend registration The following controls from the backends:  PAUSE DEREGISTER RESUME HEALTH  caplancectl to tell a running client process to issue one of those commands Graceful stop for backends Packet listening on NFQUEUE Refactor project structure  If you&amp;rsquo;ve been keeping track, you&amp;rsquo;ll notice that this puts us very close to the Caplance MVP!" />
+<meta name="keywords" content="im peyton" />
+<meta name="robots" content="noodp" />
+<link rel="canonical" href="https://pawalt.github.io/posts/2019/06/caplance-development-update-2/" />
+
+
+<title>
+    
+    Caplance Development Update 2 :: Peyton Walters 
+    
+</title>
+
+
+
+<link href="https://cdnjs.cloudflare.com/ajax/libs/flag-icon-css/3.2.1/css/flag-icon.min.css" rel="stylesheet"
+    type="text/css">
+
+
+
+<link rel="stylesheet" href="/main.min.a0a9c9d3ba677039929ecf5c63646dd7732481425a68f9b97486c70fde81475d.css">
+
+
+
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/site.webmanifest">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#252627">
+<link rel="shortcut icon" href="/favicon.ico">
+<meta name="theme-color" content="#252627"><meta itemprop="name" content="Caplance Development Update 2">
+<meta itemprop="description" content="Well that was fast">
+
+
+<meta itemprop="datePublished" content="2019-06-30T00:00:00&#43;00:00" />
+<meta itemprop="dateModified" content="2019-06-30T00:00:00&#43;00:00" />
+<meta itemprop="wordCount" content="903">
+
+
+
+<meta itemprop="keywords" content="go,golang,load balancing,networking,linux,caplance," />
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:image" content="https://pawalt.github.io/"/>
+
+<meta name="twitter:title" content="Caplance Development Update 2"/>
+<meta name="twitter:description" content="Well that was fast"/>
+
+
+
+<meta property="article:section" content="networking" />
+<meta property="article:section" content="programming" />
+<meta property="article:section" content="post" />
+
+<meta property="article:published_time" content="2019-06-30 00:00:00 &#43;0000 UTC" />
+
+
+
+
+
+
+
+    </head>
+
+    <body class="">
+        <div class="container">
+            <header class="header">
+    <span class="header__inner">
+        <a href="/" style="text-decoration: none;">
+    <div class="logo">
+        
+            <span class="logo__mark">></span>
+            <span class="logo__text">/home/peyton/ $</span>
+            <span class="logo__cursor"></span>
+        
+    </div>
+</a>
+
+
+        <span class="header__right">
+            
+                <nav class="menu">
+    <ul class="menu__inner"><li><a href="https://pawalt.github.io/about">About</a></li><li><a href="https://pawalt.github.io/posts">Blog</a></li>
+    </ul>
+</nav>
+
+                <span class="menu-trigger">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                        <path d="M0 0h24v24H0z" fill="none"/>
+                        <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/>
+                    </svg>
+                </span>
+            
+
+            <span class="theme-toggle"><svg class="theme-toggler" width="24" height="24" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path d="M22 41C32.4934 41 41 32.4934 41 22C41 11.5066 32.4934 3 22
+  3C11.5066 3 3 11.5066 3 22C3 32.4934 11.5066 41 22 41ZM7 22C7
+  13.7157 13.7157 7 22 7V37C13.7157 37 7 30.2843 7 22Z"/>
+</svg>
+</span>
+        </span>
+    </span>
+</header>
+
+
+            <div class="content">
+                
+    <main class="post">
+
+        <div class="post-info">
+            <p><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-clock"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>5 minutes
+
+            
+
+            </p>
+        </div>
+
+        <article>
+            <h1 class="post-title"><a href="https://pawalt.github.io/posts/2019/06/caplance-development-update-2/">Caplance Development Update 2</a></h1>
+
+            
+
+            <div class="post-content">
+                
+
+<p>I&rsquo;m back! Over the past few weeks, I&rsquo;ve had much more time to work on Caplance than I had in the prior months, so, naturally, a ton of work has gotten done in these few weeks. Specifically, I&rsquo;ve implemented the following functionality:</p>
+
+<ul>
+<li>Backend registration</li>
+<li>The following controls from the backends:
+
+<ul>
+<li>PAUSE</li>
+<li>DEREGISTER</li>
+<li>RESUME</li>
+<li>HEALTH</li>
+</ul></li>
+<li><code>caplancectl</code> to tell a running client process to issue one of those commands</li>
+<li>Graceful stop for backends</li>
+<li>Packet listening on NFQUEUE</li>
+<li>Refactor project structure</li>
+</ul>
+
+<p>If you&rsquo;ve been keeping track, you&rsquo;ll notice that this puts us very close to the Caplance MVP! All that&rsquo;s left is config file parsing and some housekeeping.</p>
+
+<p>Here are some of the more technically interesting parts of this revision of Caplance:</p>
+
+<h2 id="nfqueue">NFQUEUE</h2>
+
+<p>If you&rsquo;ve got some time and an appetite for some very interesting debugging, I highly recommend taking a look at <a href="https://pawalt.github.io/posts/2019/06/nfqueue-and-the-mysterious-reset/">my post about NFQUEUE</a>. If you don&rsquo;t, here&rsquo;s the TL;DR:</p>
+
+<p>I switched how listening works in Caplance again. Now, I&rsquo;m using NFQUEUE, an iptables option to hand off packets from an iptables rule to a program in userspace before any packet processing is done.</p>
+
+<h2 id="backend-communication">Backend Communication</h2>
+
+<p>One of the things I wanted to learn from this project was how to write a system for keeping track of state between two hosts. I looked (extensively) into using RPC for this, but it just didn&rsquo;t seem like the right move. RPC is designed to make &ldquo;remote process calls&rdquo;, but I don&rsquo;t really need that. I need a way to keep track of state. I could&rsquo;ve mangled RPC to do this, but I think just writing it myself turned out to be more elegant.</p>
+
+<p>The first step in creating this was creating the interface. I created a simple interface called <code>Communicator</code> to write data, read data, and close the underlying connection:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#75715e">// Communicator is the connection manager for a backend
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Communicator</span> <span style="color:#66d9ef">interface</span> {
+    <span style="color:#a6e22e">ReadLine</span>() (<span style="color:#66d9ef">string</span>, <span style="color:#66d9ef">error</span>)
+    <span style="color:#a6e22e">WriteLine</span>(<span style="color:#a6e22e">data</span> <span style="color:#66d9ef">string</span>) <span style="color:#66d9ef">error</span>
+    <span style="color:#a6e22e">Close</span>() <span style="color:#66d9ef">error</span>
+}</code></pre></div>
+<p>To actually implement this, I created a <code>TCPCommunicator</code> struct and filled in the methods.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#75715e">// TCPCommunicator is an implementation of BackendCommunicator over TCP
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">TCPCommunicator</span> <span style="color:#66d9ef">struct</span> {
+    <span style="color:#a6e22e">reader</span>       <span style="color:#f92672">*</span><span style="color:#a6e22e">bufio</span>.<span style="color:#a6e22e">Reader</span>
+    <span style="color:#a6e22e">writer</span>       <span style="color:#f92672">*</span><span style="color:#a6e22e">bufio</span>.<span style="color:#a6e22e">Writer</span>
+    <span style="color:#a6e22e">conn</span>         <span style="color:#a6e22e">net</span>.<span style="color:#a6e22e">Conn</span>
+    <span style="color:#a6e22e">readTimeout</span>  <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Duration</span>
+    <span style="color:#a6e22e">writeTimeout</span> <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Duration</span>
+}</code></pre></div>
+<p>This struct has a reader and writer to get data from the underling connection. It also has a readTimeout and writeTimeout. While the writeTimeout is fairly mundane, the readTimeout turns out to be surprisingly useful.</p>
+
+<p>In order to deregister a backend after a certain period of inactivity, I can just use the <code>SetReadDeadline(t time.Time) error</code> function with the <code>readTimeout</code>. Then, if the read errors out, and the error is a timeout, I know that the inactivity window has closed. Baking this logic into the TCPCommunicator, I now have a powerful tool that I can use on both the backend and load balancer side!</p>
+
+<p>I also implemented the following commands that the client can send to the server:</p>
+
+<ul>
+<li>PAUSE - client requesting to stay registered but not have packets forwarded to it</li>
+<li>DEREGISTER - client requesting to deregister</li>
+<li>RESUME - client requesting to have packets forwarded after a PAUSE</li>
+<li>HEALTH - message sent every few seconds to stop server from deregistering the client due to inactivity</li>
+</ul>
+
+<p>The way these are implemented isn&rsquo;t particularly interesting. I&rsquo;m just using a bufio reader to read data off the connection and parsing it with simple string tools.</p>
+
+<h2 id="caplancectl">Caplancectl</h2>
+
+<p>This isn&rsquo;t the most complex part of Caplance by any means, but I was blown away by how simple the <code>net/rpc</code> package made writing caplancectl, so I wanted to share.</p>
+
+<p>Caplancectl connects to Caplance using a unix socket that Caplance creates at <code>/var/run/caplance.sock</code>. Caplance listens just as it would with a TCP listener:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">unixSock</span>, <span style="color:#a6e22e">err</span> = <span style="color:#a6e22e">net</span>.<span style="color:#a6e22e">Listen</span>(<span style="color:#e6db74">&#34;unix&#34;</span>, <span style="color:#a6e22e">SOCKADDR</span>)</code></pre></div>
+<p>Now that I&rsquo;ve got that socket, I can hand it off to the <code>rpc</code> package, and the rest of the networking is done for me!</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#a6e22e">rpc</span>.<span style="color:#a6e22e">Register</span>(<span style="color:#a6e22e">c</span>) <span style="color:#75715e">// registering the client to receive requests over rpc
+</span><span style="color:#75715e"></span><span style="color:#a6e22e">rpc</span>.<span style="color:#a6e22e">HandleHTTP</span>()
+<span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">Serve</span>(<span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">unixSock</span>, <span style="color:#66d9ef">nil</span>)</code></pre></div>
+<p>Now that I&rsquo;ve got the RPC listening, all I have to do is define some methods that the RPC can execute. The RPC registers any methods from the registered object that take two arguments for which the latter is a pointer and returns an error. More formally, the methods must have this signature:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">t</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">T</span>) <span style="color:#a6e22e">MethodName</span>(<span style="color:#a6e22e">argType</span> <span style="color:#a6e22e">T1</span>, <span style="color:#a6e22e">replyType</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">T2</span>) <span style="color:#66d9ef">error</span></code></pre></div>
+<p>For example, my pause function looks like this:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#75715e">// Pause command from caplancectl
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">c</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Client</span>) <span style="color:#a6e22e">Pause</span>(<span style="color:#a6e22e">req</span> <span style="color:#f92672">*</span><span style="color:#66d9ef">string</span>, <span style="color:#a6e22e">reply</span> <span style="color:#f92672">*</span><span style="color:#66d9ef">string</span>) <span style="color:#66d9ef">error</span> {
+    <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">pause</span>()
+    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">==</span> <span style="color:#66d9ef">nil</span> {
+        <span style="color:#f92672">*</span><span style="color:#a6e22e">reply</span> = <span style="color:#e6db74">&#34;Pause request sent&#34;</span>
+    } <span style="color:#66d9ef">else</span> {
+        <span style="color:#f92672">*</span><span style="color:#a6e22e">reply</span> = <span style="color:#e6db74">&#34;Pause request encountered an error: &#34;</span> <span style="color:#f92672">+</span> <span style="color:#a6e22e">err</span>.<span style="color:#a6e22e">Error</span>()
+    }
+    <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">nil</span>
+}</code></pre></div>
+<p>That&rsquo;s all that needs to be done from the server side! If you think that&rsquo;s easy, the client side is even easier.</p>
+
+<p>On the client side, I can just use the RPC package to dial and then call whatever method I want. For example, if I wanted to issue a pause request, I would only need this code:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#a6e22e">client</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">rpc</span>.<span style="color:#a6e22e">DialHTTP</span>(<span style="color:#e6db74">&#34;unix&#34;</span>, <span style="color:#a6e22e">SOCKADDR</span>)
+<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+    <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">err</span>)
+}
+
+<span style="color:#66d9ef">var</span> <span style="color:#a6e22e">reply</span> <span style="color:#66d9ef">string</span>
+<span style="color:#a6e22e">err</span> = <span style="color:#a6e22e">client</span>.<span style="color:#a6e22e">Call</span>(<span style="color:#e6db74">&#34;Client.Pause&#34;</span>, <span style="color:#e6db74">&#34;&#34;</span>, <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">reply</span>)
+<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+    <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">err</span>)
+}
+<span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Println</span>(<span style="color:#a6e22e">reply</span>)</code></pre></div>
+<p>Pretty cool, right?</p>
+
+<h1 id="future-work">Future Work</h1>
+
+<p>I&rsquo;m pretty close to MVP. To get there, I have to implement the following:</p>
+
+<ul>
+<li>Config file parsing</li>
+<li>Non-stdout logging</li>
+</ul>
+
+<p>I&rsquo;ve got some more features I&rsquo;d like to implement, but we&rsquo;re gonna focus on MVP for now. These shouldn&rsquo;t be too hard to get implemented, so keep you eyes peeled for update 3!</p>
+
+            </div>
+        </article>
+
+        <hr />
+
+        <div class="post-info">
+                <p>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-tag meta-icon"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7" y2="7"></line></svg><span class="tag"><a href="https://pawalt.github.io/tags/go">go</a></span><span class="tag"><a href="https://pawalt.github.io/tags/golang">golang</a></span><span class="tag"><a href="https://pawalt.github.io/tags/load-balancing">load balancing</a></span><span class="tag"><a href="https://pawalt.github.io/tags/networking">networking</a></span><span class="tag"><a href="https://pawalt.github.io/tags/linux">linux</a></span><span class="tag"><a href="https://pawalt.github.io/tags/caplance">caplance</a></span>
+                </p>
+
+            <p><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-file-text"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>903 Words</p>
+
+            <p><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-calendar"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>2019-06-29 20:00 -0400</p>
+        </div>
+
+        
+            <div class="pagination">
+                <div class="pagination__title">
+                    <span class="pagination__title-h"></span>
+                    <hr />
+                </div>
+
+                <div class="pagination__buttons">
+                    
+                        <span class="button previous">
+                            <a href="https://pawalt.github.io/posts/2019/07/caplance-development-update-3/">
+                                <span class="button__icon">←</span>
+                                <span class="button__text">Caplance Development Update 3</span>
+                            </a>
+                        </span>
+                    
+
+                    
+                        <span class="button next">
+                            <a href="https://pawalt.github.io/posts/2019/06/nfqueue-and-the-mysterious-reset/">
+                                <span class="button__text">NFQUEUE and the Mysterious RESET</span>
+                                <span class="button__icon">→</span>
+                            </a>
+                        </span>
+                    
+                </div>
+            </div>
+        
+
+        
+    </main>
+
+            </div>
+
+            
+                <footer class="footer">
+    <div class="footer__inner">
+        <div class="footer__content">
+            <span>&copy; 2019</span>
+            
+            <span>Peyton Walters</span>
+            <span> <a href="https://pawalt.github.io/posts/index.xml" target="_blank" title="rss"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-rss"><path d="M4 11a9 9 0 0 1 9 9"></path><path d="M4 4a16 16 0 0 1 16 16"></path><circle cx="5" cy="19" r="1"></circle></svg></a></span>
+        </div>
+    </div>
+    <div class="footer__inner">
+        <div class="footer__content">
+
+        </div>
+    </div>
+    <div class="footer__inner">
+        <div class="footer__content">
+            <span>Powered by <a href="http://gohugo.io">Hugo</a></span>
+            <span>Made with &#10084; by <a href="https://github.com/rhazdon">rhazdon</a></span>
+        </div>
+    </div>
+</footer>
+
+            
+        </div>
+
+        
+
+
+
+
+<script type="text/javascript" src="/bundle.min.4c3fb12a087ceed4a52cb5d57068a9795c7069617a01ca70f788052ad66e1791779e6c72686e1dc0ca13dc03b0203204b6566bb0dd1ee80de2b7ff4d8fe53db2.js" integrity="sha512-TD&#43;xKgh87tSlLLXVcGipeVxwaWF6Acpw94gFKtZuF5F3nmxyaG4dwMoT3AOwIDIEtlZrsN0e6A3it/9Nj&#43;U9sg=="></script>
+
+
+
+    </body>
+</html>

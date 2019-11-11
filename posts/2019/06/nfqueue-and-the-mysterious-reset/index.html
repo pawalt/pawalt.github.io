@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-143263324-1"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-143263324-1');
+</script>
+
+
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="author"
+    content="">
+<meta name="description"
+    content="While working on my load balancer, Caplance, I ran into a very strange error when trying to establish a connection between a client and a backend. Before I go to deep, though, let me give a quick intro into how TCP connection establishment works.
+Types of Message When establishing a TCP connection, there are 4 possible packet types you could see:
+ SYN (S in tcpdump) - Always the first message sent." />
+<meta name="keywords" content="im peyton" />
+<meta name="robots" content="noodp" />
+<link rel="canonical" href="https://pawalt.github.io/posts/2019/06/nfqueue-and-the-mysterious-reset/" />
+
+
+<title>
+    
+    NFQUEUE and the Mysterious RESET :: Peyton Walters 
+    
+</title>
+
+
+
+<link href="https://cdnjs.cloudflare.com/ajax/libs/flag-icon-css/3.2.1/css/flag-icon.min.css" rel="stylesheet"
+    type="text/css">
+
+
+
+<link rel="stylesheet" href="/main.min.a0a9c9d3ba677039929ecf5c63646dd7732481425a68f9b97486c70fde81475d.css">
+
+
+
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/site.webmanifest">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#252627">
+<link rel="shortcut icon" href="/favicon.ico">
+<meta name="theme-color" content="#252627"><meta itemprop="name" content="NFQUEUE and the Mysterious RESET">
+<meta itemprop="description" content="I thought they disproved spontaneous generation...">
+
+
+<meta itemprop="datePublished" content="2019-06-27T00:00:00&#43;00:00" />
+<meta itemprop="dateModified" content="2019-06-27T00:00:00&#43;00:00" />
+<meta itemprop="wordCount" content="1358">
+
+
+
+<meta itemprop="keywords" content="caplance,load balancing,networking,linux," />
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:image" content="https://pawalt.github.io/"/>
+
+<meta name="twitter:title" content="NFQUEUE and the Mysterious RESET"/>
+<meta name="twitter:description" content="I thought they disproved spontaneous generation..."/>
+
+
+
+<meta property="article:section" content="network" />
+<meta property="article:section" content="programming" />
+<meta property="article:section" content="post" />
+
+<meta property="article:published_time" content="2019-06-27 00:00:00 &#43;0000 UTC" />
+
+
+
+
+
+
+
+    </head>
+
+    <body class="">
+        <div class="container">
+            <header class="header">
+    <span class="header__inner">
+        <a href="/" style="text-decoration: none;">
+    <div class="logo">
+        
+            <span class="logo__mark">></span>
+            <span class="logo__text">/home/peyton/ $</span>
+            <span class="logo__cursor"></span>
+        
+    </div>
+</a>
+
+
+        <span class="header__right">
+            
+                <nav class="menu">
+    <ul class="menu__inner"><li><a href="https://pawalt.github.io/about">About</a></li><li><a href="https://pawalt.github.io/posts">Blog</a></li>
+    </ul>
+</nav>
+
+                <span class="menu-trigger">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                        <path d="M0 0h24v24H0z" fill="none"/>
+                        <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/>
+                    </svg>
+                </span>
+            
+
+            <span class="theme-toggle"><svg class="theme-toggler" width="24" height="24" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path d="M22 41C32.4934 41 41 32.4934 41 22C41 11.5066 32.4934 3 22
+  3C11.5066 3 3 11.5066 3 22C3 32.4934 11.5066 41 22 41ZM7 22C7
+  13.7157 13.7157 7 22 7V37C13.7157 37 7 30.2843 7 22Z"/>
+</svg>
+</span>
+        </span>
+    </span>
+</header>
+
+
+            <div class="content">
+                
+    <main class="post">
+
+        <div class="post-info">
+            <p><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-clock"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>7 minutes
+
+            
+
+            </p>
+        </div>
+
+        <article>
+            <h1 class="post-title"><a href="https://pawalt.github.io/posts/2019/06/nfqueue-and-the-mysterious-reset/">NFQUEUE and the Mysterious RESET</a></h1>
+
+            
+
+            <div class="post-content">
+                
+
+<p>While working on my load balancer, <a href="https://github.com/pwpon500/Caplance">Caplance</a>, I ran into a very strange error when trying to establish a connection between a client and a backend. Before I go to deep, though, let me give a quick intro into how TCP connection establishment works.</p>
+
+<h3 id="types-of-message">Types of Message</h3>
+
+<p>When establishing a TCP connection, there are 4 possible packet types you could see:</p>
+
+<ul>
+<li>SYN (<code>S</code> in <code>tcpdump</code>) - Always the first message sent. It is the message from the client to the server effectively saying &ldquo;I would like to connect.&rdquo;</li>
+<li>SYN-ACK (<code>S.</code> in <code>tcpdump</code>) - The server&rsquo;s reply to a SYN if it wishes to accept the connection.</li>
+<li>ACK (<code>A</code> or <code>.</code> in <code>tcpdump</code>) - The client&rsquo;s reply to a SYN-ACK, fully establishing the TCP connection.</li>
+<li>RESET (<code>R</code> in <code>tcpdump</code>) - The server&rsquo;s response to a SYN if it wishes to refuse the connection.</li>
+</ul>
+
+<p>In a successful connection, the order will be SYN, SYN-ACK, ACK. In an unsuccessful connection, the order will be SYN, RESET.</p>
+
+<h3 id="operating-systems-and-tcp">Operating Systems and TCP</h3>
+
+<p>When a program wants to use TCP, it asks the OS to &ldquo;bind&rdquo; to a TCP port. Then, when packets come into that TCP port, the OS hands off the packets to the program. The program can then reply to those packets however it wants (accepting or rejecting the incoming connections).</p>
+
+<p>If a program is not bound to a port and a SYN is sent to that port, the OS immediately replies to the SYN with a RESET.</p>
+
+<p>In the case of Caplance, the load balancer isn&rsquo;t listening on a specific TCP port. Instead, it listens for any and all TCP packets. As a result, no bindings are created by Caplance.</p>
+
+<h2 id="the-bug">The Bug</h2>
+
+<p>Ok, now on to the fun part. I had finally gotten to the point in Caplance where I could send a request to the load balancer&rsquo;s IP and have a backend respond to the request, or so I thought. For the purposes of this demo, h1 is the load balancer, h2 is the backend, and h3 is the client. 10.0.0.50 is the virtual IP that the load balancer is serving. Let&rsquo;s start up a netcat TCP server on h2 and try to send a request from h3:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">h2 $ nc -l <span style="color:#ae81ff">10</span>.0.0.50 <span style="color:#ae81ff">8080</span>
+
+h3 $ telnet <span style="color:#ae81ff">10</span>.0.0.50 <span style="color:#ae81ff">8080</span>
+Trying <span style="color:#ae81ff">10</span>.0.0.50...
+telnet: Unable to connect to remote host: Connection refused</code></pre></div>
+<p>Well, what can you expect really? Things never work on the first try. This time, let&rsquo;s do the exact same thing but use <code>tcpdump</code> to see what&rsquo;s happening on h2.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">h2 $ tcpdump -i any host <span style="color:#ae81ff">10</span>.0.0.50 and tcp -n
+tcpdump: verbose output suppressed, use -v or -vv <span style="color:#66d9ef">for</span> full protocol decode
+listening on any, link-type LINUX_SLL <span style="color:#f92672">(</span>Linux cooked<span style="color:#f92672">)</span>, capture size <span style="color:#ae81ff">262144</span> bytes
+<span style="color:#ae81ff">20</span>:57:32.941669 IP <span style="color:#ae81ff">10</span>.0.0.3.36040 &gt; <span style="color:#ae81ff">10</span>.0.0.50.8080: Flags <span style="color:#f92672">[</span>S<span style="color:#f92672">]</span>, seq <span style="color:#ae81ff">252176171</span>, win <span style="color:#ae81ff">29200</span>, options <span style="color:#f92672">[</span>mss <span style="color:#ae81ff">1460</span>,sackOK,TS val <span style="color:#ae81ff">2262321703</span> ecr <span style="color:#ae81ff">0</span>,nop,wscale <span style="color:#ae81ff">9</span><span style="color:#f92672">]</span>, length <span style="color:#ae81ff">0</span>
+<span style="color:#ae81ff">20</span>:57:32.941701 IP <span style="color:#ae81ff">10</span>.0.0.50.8080 &gt; <span style="color:#ae81ff">10</span>.0.0.3.36040: Flags <span style="color:#f92672">[</span>S.<span style="color:#f92672">]</span>, seq <span style="color:#ae81ff">492629165</span>, ack <span style="color:#ae81ff">252176172</span>, win <span style="color:#ae81ff">28960</span>, options <span style="color:#f92672">[</span>mss <span style="color:#ae81ff">1460</span>,sackOK,TS val <span style="color:#ae81ff">4192526147</span> ecr <span style="color:#ae81ff">2262321703</span>,nop,wscale <span style="color:#ae81ff">9</span><span style="color:#f92672">]</span>, length <span style="color:#ae81ff">0</span></code></pre></div>
+<p>Here, <code>tcpdump</code> is showing us that the backend is seeing 2 packets. One is a SYN from the client to the server, and one is a SYN-ACK from the server to the client. If you remember, these are exactly the messages we expect &hellip; minus an ACK from the client.</p>
+
+<p>At this point, the logical conclusion is that packets are able to flow from client to server, but the ones going server to client aren&rsquo;t making it. Just for sanity, let&rsquo;s see what the <code>tcpdump</code> output looks like for the client.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">h3 $ tcpdump -i any host <span style="color:#ae81ff">10</span>.0.0.3 and tcp -n
+tcpdump: verbose output suppressed, use -v or -vv <span style="color:#66d9ef">for</span> full protocol decode
+listening on any, link-type LINUX_SLL <span style="color:#f92672">(</span>Linux cooked<span style="color:#f92672">)</span>, capture size <span style="color:#ae81ff">262144</span> bytes
+<span style="color:#ae81ff">21</span>:11:45.055143 IP <span style="color:#ae81ff">10</span>.0.0.3.37388 &gt; <span style="color:#ae81ff">10</span>.0.0.50.8080: Flags <span style="color:#f92672">[</span>S<span style="color:#f92672">]</span>, seq <span style="color:#ae81ff">3009015791</span>, win <span style="color:#ae81ff">29200</span>, options <span style="color:#f92672">[</span>mss <span style="color:#ae81ff">1460</span>,sackOK,TS val <span style="color:#ae81ff">2263173829</span> ecr <span style="color:#ae81ff">0</span>,nop,wscale <span style="color:#ae81ff">9</span><span style="color:#f92672">]</span>, length <span style="color:#ae81ff">0</span>
+<span style="color:#ae81ff">21</span>:11:45.059240 IP <span style="color:#ae81ff">10</span>.0.0.50.8080 &gt; <span style="color:#ae81ff">10</span>.0.0.3.37388: Flags <span style="color:#f92672">[</span>R.<span style="color:#f92672">]</span>, seq <span style="color:#ae81ff">0</span>, ack <span style="color:#ae81ff">3009015792</span>, win <span style="color:#ae81ff">0</span>, length <span style="color:#ae81ff">0</span>
+<span style="color:#ae81ff">21</span>:11:45.059248 IP <span style="color:#ae81ff">10</span>.0.0.50.8080 &gt; <span style="color:#ae81ff">10</span>.0.0.3.37388: Flags <span style="color:#f92672">[</span>S.<span style="color:#f92672">]</span>, seq <span style="color:#ae81ff">2629426318</span>, ack <span style="color:#ae81ff">3009015792</span>, win <span style="color:#ae81ff">28960</span>, options <span style="color:#f92672">[</span>mss <span style="color:#ae81ff">1460</span>,sackOK,TS val <span style="color:#ae81ff">4193378273</span> ecr <span style="color:#ae81ff">2263173829</span>,nop,wscale <span style="color:#ae81ff">9</span><span style="color:#f92672">]</span>, length <span style="color:#ae81ff">0</span></code></pre></div>
+<p>&hellip; What?</p>
+
+<p>At this point, I&rsquo;m baffled. Let&rsquo;s recap what&rsquo;s going on here. The server is seeing a SYN and SYN-ACK. However, the client is seeing a SYN, SYN-ACK, and RESET. How is it possible that the client could be sent both a SYN-ACK and a RESET from the same source??</p>
+
+<p>If you&rsquo;re interested in this stuff, I invite you to sit for a minute and think about why this might be happening. This is one of the more interesting bugs I&rsquo;ve run into in a while. The presence of a SYN-ACK and RESET concurrently really interested me.</p>
+
+<h3 id="the-bug-revealed">The Bug Revealed</h3>
+
+<p>Remember when I said that Caplance isn&rsquo;t binding to a specific port? That turns out to be the key to the puzzle here. <strong>Since Caplance listens for all TCP connections instead of a single port, it never sends a &ldquo;bind&rdquo; request to the OS. This means that the OS will still respond to all incoming TCP connections with a RESET.</strong></p>
+
+<p>To clarify, let&rsquo;s think about the connection establishment journey:</p>
+
+<ol>
+<li>SYN leaves the client</li>
+<li>SYN hits the load balancer
+
+<ol>
+<li>Because the load balancer isn&rsquo;t actually bound to a TCP port, the OS replies to the client with a RESET</li>
+<li>The load balancer forwards the SYN to the backend</li>
+</ol></li>
+<li>SYN hits the backend
+
+<ol>
+<li>Backend replies to the client with SYN-ACK</li>
+</ol></li>
+<li>Client receives RESET</li>
+<li>Client receives SYN-ACK</li>
+</ol>
+
+<p>As is typical, the actual bug is pretty simple in hindsight, but it can be hard to find in the moment.</p>
+
+<h2 id="enter-nfqueue">Enter NFQUEUE</h2>
+
+<p>So now we&rsquo;re in a conundrum: we want to stop the OS from seeing packets destined for the VIP, but we also want the OS to give packets destined to the VIP to our program so it can forward then to the appropriate backend. This is where NFQUEUE comes into play.</p>
+
+<p>NFQUEUE is a iptables filter rule that queues up incoming packets onto a queue, waiting to be processed by some program in userspace. Let&rsquo;s see an example rule.</p>
+
+<p>The following rules will drop all tcp and udp packets destined for the IP <code>10.0.0.50</code>:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ iptables -A INPUT -d <span style="color:#ae81ff">10</span>.0.0.50/32 -p tcp -j DROP
+$ iptables -A INPUT -d <span style="color:#ae81ff">10</span>.0.0.50/32 -p udp -j DROP</code></pre></div>
+<p>What if instead, we want to put all tcp and udp destined for <code>10.0.0.50</code> onto a NFQUEUE with the id 0? We can simply modify our previous rule as follows:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ iptables -A INPUT -d <span style="color:#ae81ff">10</span>.0.0.50/32 -p tcp -j NFQUEUE --queue-num <span style="color:#ae81ff">0</span>
+$ iptables -A INPUT -d <span style="color:#ae81ff">10</span>.0.0.50/32 -p udp -j NFQUEUE --queue-num <span style="color:#ae81ff">0</span></code></pre></div>
+<p>Now, we have a single source (queue 0) that we can consume all our packets off of! There are bindings to do this in many languages, but I&rsquo;m using Go for Caplance, so here&rsquo;s a snippet of how this looks in Go.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#a6e22e">b</span>.<span style="color:#a6e22e">nfq</span>, <span style="color:#a6e22e">err</span> = <span style="color:#a6e22e">netfilter</span>.<span style="color:#a6e22e">NewNFQueue</span>(<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">100</span>, <span style="color:#a6e22e">netfilter</span>.<span style="color:#a6e22e">NF_DEFAULT_PACKET_SIZE</span>)
+<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+    <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Panicln</span>(<span style="color:#a6e22e">err</span>)
+}
+<span style="color:#a6e22e">packetChan</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">b</span>.<span style="color:#a6e22e">nfq</span>.<span style="color:#a6e22e">GetPackets</span>()
+<span style="color:#a6e22e">stopped</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">false</span>
+<span style="color:#66d9ef">for</span> !<span style="color:#a6e22e">stopped</span> {
+    <span style="color:#66d9ef">select</span> {
+    <span style="color:#66d9ef">case</span> <span style="color:#a6e22e">packet</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&lt;-</span><span style="color:#a6e22e">packetChan</span>:
+        <span style="color:#a6e22e">b</span>.<span style="color:#a6e22e">packets</span> <span style="color:#f92672">&lt;-</span> <span style="color:#a6e22e">packet</span>.<span style="color:#a6e22e">Packet</span>.<span style="color:#a6e22e">Data</span>()
+        <span style="color:#a6e22e">packet</span>.<span style="color:#a6e22e">SetVerdict</span>(<span style="color:#a6e22e">netfilter</span>.<span style="color:#a6e22e">NF_DROP</span>)
+    <span style="color:#66d9ef">case</span> <span style="color:#a6e22e">sig</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&lt;-</span><span style="color:#a6e22e">b</span>.<span style="color:#a6e22e">stopChan</span>:
+        <span style="color:#a6e22e">b</span>.<span style="color:#a6e22e">stopChan</span> <span style="color:#f92672">&lt;-</span> <span style="color:#a6e22e">sig</span>
+        <span style="color:#a6e22e">stopped</span> = <span style="color:#66d9ef">true</span>
+    }
+}</code></pre></div>
+<p>Don&rsquo;t worry if you don&rsquo;t understand the Go specifics of this code. The important thing is that we&rsquo;re creating a NFQUEUE receiver called <code>b.nfq</code>. Then, we create a channel called <code>packetChan</code> off of which we can consume whatever packets come in to queue 0.</p>
+
+<h3 id="running-it">Running It</h3>
+
+<p>Let&rsquo;s make sure this works! If it does, we should see whatever we type into h3 popping up in the TCP server on h2.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">h3 $ telnet <span style="color:#ae81ff">10</span>.0.0.50 <span style="color:#ae81ff">8080</span>
+Trying <span style="color:#ae81ff">10</span>.0.0.50...
+Connected to <span style="color:#ae81ff">10</span>.0.0.50.
+Escape character is <span style="color:#e6db74">&#39;^]&#39;</span>.
+Is this working?
+It is!!!!!
+ ^<span style="color:#f92672">]</span>
+telnet&gt; close
+Connection closed.
+
+h2 $ nc -l <span style="color:#ae81ff">10</span>.0.0.50 <span style="color:#ae81ff">8080</span>
+Is this working?
+It is!!!!</code></pre></div>
+<p>We did it! NFQUEUE was the answer to our problems.</p>
+
+<h2 id="conclusion">Conclusion</h2>
+
+<p>When I found out about NFQUEUE, I was dumbstruck. It solved so many of my problems - creating a single source from which I could consume packets, stopping the load balancer from replying to the wrong packets, and overall just cleaning up my code. If you&rsquo;ve got a project like this, I highly recommend looking at NFQUEUE as a potential option.</p>
+
+            </div>
+        </article>
+
+        <hr />
+
+        <div class="post-info">
+                <p>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-tag meta-icon"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7" y2="7"></line></svg><span class="tag"><a href="https://pawalt.github.io/tags/caplance">caplance</a></span><span class="tag"><a href="https://pawalt.github.io/tags/load-balancing">load balancing</a></span><span class="tag"><a href="https://pawalt.github.io/tags/networking">networking</a></span><span class="tag"><a href="https://pawalt.github.io/tags/linux">linux</a></span>
+                </p>
+
+            <p><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-file-text"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>1358 Words</p>
+
+            <p><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-calendar"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>2019-06-26 20:00 -0400</p>
+        </div>
+
+        
+            <div class="pagination">
+                <div class="pagination__title">
+                    <span class="pagination__title-h"></span>
+                    <hr />
+                </div>
+
+                <div class="pagination__buttons">
+                    
+                        <span class="button previous">
+                            <a href="https://pawalt.github.io/posts/2019/06/caplance-development-update-2/">
+                                <span class="button__icon">←</span>
+                                <span class="button__text">Caplance Development Update 2</span>
+                            </a>
+                        </span>
+                    
+
+                    
+                        <span class="button next">
+                            <a href="https://pawalt.github.io/posts/2019/06/my-neovim-go-setup/">
+                                <span class="button__text">My Neovim Go Setup</span>
+                                <span class="button__icon">→</span>
+                            </a>
+                        </span>
+                    
+                </div>
+            </div>
+        
+
+        
+    </main>
+
+            </div>
+
+            
+                <footer class="footer">
+    <div class="footer__inner">
+        <div class="footer__content">
+            <span>&copy; 2019</span>
+            
+            <span>Peyton Walters</span>
+            <span> <a href="https://pawalt.github.io/posts/index.xml" target="_blank" title="rss"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-rss"><path d="M4 11a9 9 0 0 1 9 9"></path><path d="M4 4a16 16 0 0 1 16 16"></path><circle cx="5" cy="19" r="1"></circle></svg></a></span>
+        </div>
+    </div>
+    <div class="footer__inner">
+        <div class="footer__content">
+
+        </div>
+    </div>
+    <div class="footer__inner">
+        <div class="footer__content">
+            <span>Powered by <a href="http://gohugo.io">Hugo</a></span>
+            <span>Made with &#10084; by <a href="https://github.com/rhazdon">rhazdon</a></span>
+        </div>
+    </div>
+</footer>
+
+            
+        </div>
+
+        
+
+
+
+
+<script type="text/javascript" src="/bundle.min.4c3fb12a087ceed4a52cb5d57068a9795c7069617a01ca70f788052ad66e1791779e6c72686e1dc0ca13dc03b0203204b6566bb0dd1ee80de2b7ff4d8fe53db2.js" integrity="sha512-TD&#43;xKgh87tSlLLXVcGipeVxwaWF6Acpw94gFKtZuF5F3nmxyaG4dwMoT3AOwIDIEtlZrsN0e6A3it/9Nj&#43;U9sg=="></script>
+
+
+
+    </body>
+</html>

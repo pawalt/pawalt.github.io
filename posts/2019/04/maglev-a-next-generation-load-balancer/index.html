@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-143263324-1"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-143263324-1');
+</script>
+
+
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="author"
+    content="">
+<meta name="description"
+    content="When reading Google&amp;rsquo;s SRE book, I came across the section on load balancing. The book breaks up load balancing into three levels:
+ DNS level Network level/Virtual IP level Datacenter level  While I was familiar with the Datacenter level (aka reverse proxy load balancing) and DNS load balancing (achieved partially through round robin DNS), I had never looked at network-level load balancing. After reading this section, I was fascinated with how their network-level load balancing works." />
+<meta name="keywords" content="im peyton" />
+<meta name="robots" content="noodp" />
+<link rel="canonical" href="https://pawalt.github.io/posts/2019/04/maglev-a-next-generation-load-balancer/" />
+
+
+<title>
+    
+    Maglev - A Next-Generation Load Balancer :: Peyton Walters 
+    
+</title>
+
+
+
+<link href="https://cdnjs.cloudflare.com/ajax/libs/flag-icon-css/3.2.1/css/flag-icon.min.css" rel="stylesheet"
+    type="text/css">
+
+
+
+<link rel="stylesheet" href="/main.min.a0a9c9d3ba677039929ecf5c63646dd7732481425a68f9b97486c70fde81475d.css">
+
+
+
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/site.webmanifest">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#252627">
+<link rel="shortcut icon" href="/favicon.ico">
+<meta name="theme-color" content="#252627"><meta itemprop="name" content="Maglev - A Next-Generation Load Balancer">
+<meta itemprop="description" content="Reverse proxy is so last year">
+
+
+<meta itemprop="datePublished" content="2019-04-20T00:00:00&#43;00:00" />
+<meta itemprop="dateModified" content="2019-04-20T00:00:00&#43;00:00" />
+<meta itemprop="wordCount" content="1249">
+
+
+
+<meta itemprop="keywords" content="maglev,linux,load balancing,networking," />
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:image" content="https://pawalt.github.io/"/>
+
+<meta name="twitter:title" content="Maglev - A Next-Generation Load Balancer"/>
+<meta name="twitter:description" content="Reverse proxy is so last year"/>
+
+
+
+<meta property="article:section" content="networking" />
+<meta property="article:section" content="post" />
+
+<meta property="article:published_time" content="2019-04-20 00:00:00 &#43;0000 UTC" />
+
+
+
+
+
+
+
+    </head>
+
+    <body class="">
+        <div class="container">
+            <header class="header">
+    <span class="header__inner">
+        <a href="/" style="text-decoration: none;">
+    <div class="logo">
+        
+            <span class="logo__mark">></span>
+            <span class="logo__text">/home/peyton/ $</span>
+            <span class="logo__cursor"></span>
+        
+    </div>
+</a>
+
+
+        <span class="header__right">
+            
+                <nav class="menu">
+    <ul class="menu__inner"><li><a href="https://pawalt.github.io/about">About</a></li><li><a href="https://pawalt.github.io/posts">Blog</a></li>
+    </ul>
+</nav>
+
+                <span class="menu-trigger">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                        <path d="M0 0h24v24H0z" fill="none"/>
+                        <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/>
+                    </svg>
+                </span>
+            
+
+            <span class="theme-toggle"><svg class="theme-toggler" width="24" height="24" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path d="M22 41C32.4934 41 41 32.4934 41 22C41 11.5066 32.4934 3 22
+  3C11.5066 3 3 11.5066 3 22C3 32.4934 11.5066 41 22 41ZM7 22C7
+  13.7157 13.7157 7 22 7V37C13.7157 37 7 30.2843 7 22Z"/>
+</svg>
+</span>
+        </span>
+    </span>
+</header>
+
+
+            <div class="content">
+                
+    <main class="post">
+
+        <div class="post-info">
+            <p><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-clock"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>6 minutes
+
+            
+
+            </p>
+        </div>
+
+        <article>
+            <h1 class="post-title"><a href="https://pawalt.github.io/posts/2019/04/maglev-a-next-generation-load-balancer/">Maglev - A Next-Generation Load Balancer</a></h1>
+
+            
+
+            <div class="post-content">
+                
+
+<p>When reading <a href="https://landing.google.com/sre/sre-book/toc/index.html">Google&rsquo;s SRE book</a>, I came across the section on load balancing. The book breaks up load balancing into three levels:</p>
+
+<ol>
+<li>DNS level</li>
+<li>Network level/Virtual IP level</li>
+<li>Datacenter level</li>
+</ol>
+
+<p>While I was familiar with the Datacenter level (aka reverse proxy load balancing) and DNS load balancing (achieved partially through round robin DNS), I had never looked at network-level load balancing. After reading this section, I was fascinated with how their network-level load balancing works.</p>
+
+<p>After some research online, I realized that the system they were referring to was their load balancer called Maglev. In 2016, Google released a paper detailing Maglev and how they built it. If you&rsquo;re interested in the nitty-gritty details, you can read the paper <a href="https://ai.google/research/pubs/pub44824">here</a>. It&rsquo;s a dense but fascinating read. I could spend a huge amount of time going into all the details of what makes Maglev interesting, but instead, I&rsquo;ll focus on two aspects: Maglev hashing and packet encapsulation.</p>
+
+<h2 id="introduction">Introduction</h2>
+
+<p>Before anything else, I&rsquo;ll describe the function of a network load balancer. The job of a network load balancer is to distribute packets destined for a &ldquo;virtual IP address&rdquo; to a set of backends evenly. Take the following picture as an example:</p>
+
+<p><img src="/img/maglev_1.png" alt="example maglev" /></p>
+
+<p>In this example, the job of Maglev is to deliver all of the packets coming in from the public internet evenly to backends 1-4.</p>
+
+<h2 id="maglev-hashing">Maglev Hashing</h2>
+
+<p>The first part of load balancing is actually deciding which backend to send an incoming packet to. In network load balancing, we are just looking at the IP layer, so we can&rsquo;t keep track of things like which backend has the most TCP connections open to it. Since we can&rsquo;t keep track of current state, we have to figure out how to distribute packets evenly just based on some attribute of the packet. Assume we pick out some attribute of each packet (this is usually a hashed combination of source IP and source port) and call id <code>id</code>. Then, we can treat <code>id</code> as an integer and evenly distribute packets to backends using the function <code>backend = id (mod n)</code> where <code>n</code> is our number of backends. Assuming an even distribution of IDs, this method will evenly distribute packets to backends, and it will keep sending packets from the same source to the same backend.</p>
+
+<p>So, is it that simple? It seems like we&rsquo;ve achieved what we want to - even distribution - with no downsides. Consider what happens when our <code>n</code> increases or decreases by even 1, however. In this case, since we don&rsquo;t know the range of our <code>id</code> hash function, which backend our packets go to could be completely changed for all connections. This would mean that all open client connections would be broken, which is certainly not desirable behavior. To see this in action, let&rsquo;s look at the example of where to send incoming packets with 5 backends versus with 4 backends.</p>
+
+<table>
+<thead>
+<tr>
+<th>id</th>
+<th>id (mod 4)</th>
+<th>id (mod 5)</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>717</td>
+<td>1</td>
+<td>2</td>
+</tr>
+
+<tr>
+<td>561</td>
+<td>1</td>
+<td>1</td>
+</tr>
+
+<tr>
+<td>544</td>
+<td>0</td>
+<td>4</td>
+</tr>
+
+<tr>
+<td>67</td>
+<td>3</td>
+<td>2</td>
+</tr>
+
+<tr>
+<td>310</td>
+<td>2</td>
+<td>0</td>
+</tr>
+
+<tr>
+<td>626</td>
+<td>2</td>
+<td>1</td>
+</tr>
+</tbody>
+</table>
+
+<p>As you can see, all the packet flows are disrupted except that for the packet with id 561. Since we will certainly be adding and removing backends live, this is unacceptable behavior. This is where <strong>consistent hashing</strong> comes to the rescue. Consistent hashing is very complicated, but the short of it is that it provides a way for minimal disruption when adding and removing backends. With consistent hashing, instead of all the packet flows being disrupted, at most <code>1/n</code> (where <code>n</code> is the number of the backends) of the packets flows are disrupted.</p>
+
+<p>There are many trade-offs with different kinds of consistent hashing that <a href="https://medium.com/@dgryski/consistent-hashing-algorithmic-tradeoffs-ef6b8e2fcae8">this article</a> explains better than I can, but in essence, there are three things you can optimize for in consistent hashing: memory usage, lookup speed, and hashtable rebuild speed. You can typically have 2 of these at once, but you can never have all 3 without making some other very significant tradeoff. Google&rsquo;s solution, called <strong>Maglev Hashing</strong>, optimizes for the first two. It assumes node failures are uncommon, and in making that assumption, it can get low memory usage with high lookup speed and minimal disruption when <em>new</em> backends are added but poor rebuild speed when a backend fails. This is a pretty reasonable assumption, and it turns out to work extremely well in the context of network load balancing.</p>
+
+<p>Now that we know how to pick backends, let&rsquo;s actually talk about how we send data to backends.</p>
+
+<h2 id="packet-encapsulation">Packet Encapsulation</h2>
+
+<p>First, let&rsquo;s consider the reverse proxy method of load balancing. In this method, connections are taken in by the load balancer. The balancer then initiates a new connection to the appropriate backend for the connection, and proxies the connections together, allowing the client to indirectly talk to a backend. This method looks like this:</p>
+
+<p><img src="/img/maglev_2.png" alt="reverse proxy design" /></p>
+
+<p>In this design, the load balancer has to do the following:</p>
+
+<ul>
+<li>Keep track of all active connections</li>
+<li>Proxy data between connections for all connections</li>
+<li>Pass both ingress and egress traffic for all the backends</li>
+</ul>
+
+<p>While this is acceptable (and even desired) for a datacenter load balancer, we can&rsquo;t pass packets at the scale a network load balancer needs to using this design. This is where <strong>packet encapsulation</strong> comes into play.</p>
+
+<p>The solution that Google found to this problem was to use the following algorithm:</p>
+
+<ol>
+<li>Maglev hash the packet to determine its backend</li>
+<li>Wrap the packet in a layer of GRE (generic routing encapsulation)</li>
+<li>Send the encapsulated packet to the desired backend</li>
+<li>Have the backend break the packet of the encapsulation and fully process it</li>
+<li>Have the backend directly reply to this packet.</li>
+</ol>
+
+<p>Did you catch that last step? Since we&rsquo;re using encapsulation, the backend is seeing the original packet as received by the load balancer, so it can directly reply to the packet. We can see this in action on an example packet flow:</p>
+
+<p><img src="/img/maglev_3.png" alt="gre design" /></p>
+
+<p>The fact that the backend can directly reply is a huge benefit of the encapsulation method. To see why, consider the use case of YouTube. When a user requests to see a video, the request payload is very small, only containing metadata about what video they want to watch. The reply, however, is gigantic since it&rsquo;s a full video of up to 8K quality! With this method, the load balancer only only has to worry about the request, meaning it can handle drastically more traffic than a reverse proxy can.</p>
+
+<p>Personally, I thought this was the most interesting part of Maglev. I had only ever thought to use GRE as a site-to-site VPN, but this gave me a whole new outlook on what it could do.</p>
+
+<h2 id="conclusion">Conclusion</h2>
+
+<p>Maglev brings a ton of interesting concepts to the table and combines them in a way we&rsquo;ve never really seen before. I could only cover two things here, but tech like ECMP and RPC also play a huge role in how Maglev works. If you&rsquo;re interested, I highly encourage reading the paper.</p>
+
+<p>Thanks for reading! Look below for a shameless plug.</p>
+
+<h2 id="shameless-plug">Shameless Plug</h2>
+
+<p>As I said, I found Google&rsquo;s ideas on network load balancers fascinating. In fact, I found it so interesting that I decided to implement it myself! If you&rsquo;re interested in seeing how some of these ideas are implemented, I&rsquo;m writing my own version of Maglev called Caplance <a href="https://github.com/pwpon500/caplance">here</a>. At the time of writing this, I&rsquo;m working on setting up automated testing with Mininet, and I&rsquo;ll probably write more in the coming weeks as I make more progress on the load balancer.</p>
+
+            </div>
+        </article>
+
+        <hr />
+
+        <div class="post-info">
+                <p>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-tag meta-icon"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7" y2="7"></line></svg><span class="tag"><a href="https://pawalt.github.io/tags/maglev">maglev</a></span><span class="tag"><a href="https://pawalt.github.io/tags/linux">linux</a></span><span class="tag"><a href="https://pawalt.github.io/tags/load-balancing">load balancing</a></span><span class="tag"><a href="https://pawalt.github.io/tags/networking">networking</a></span>
+                </p>
+
+            <p><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-file-text"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>1249 Words</p>
+
+            <p><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-calendar"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>2019-04-19 20:00 -0400</p>
+        </div>
+
+        
+            <div class="pagination">
+                <div class="pagination__title">
+                    <span class="pagination__title-h"></span>
+                    <hr />
+                </div>
+
+                <div class="pagination__buttons">
+                    
+                        <span class="button previous">
+                            <a href="https://pawalt.github.io/posts/2019/04/mininet-for-education/">
+                                <span class="button__icon">←</span>
+                                <span class="button__text">Mininet for Education</span>
+                            </a>
+                        </span>
+                    
+
+                    
+                        <span class="button next">
+                            <a href="https://pawalt.github.io/posts/2019/04/on-the-value-of-formal-education/">
+                                <span class="button__text">On the Value of Formal Education</span>
+                                <span class="button__icon">→</span>
+                            </a>
+                        </span>
+                    
+                </div>
+            </div>
+        
+
+        
+    </main>
+
+            </div>
+
+            
+                <footer class="footer">
+    <div class="footer__inner">
+        <div class="footer__content">
+            <span>&copy; 2019</span>
+            
+            <span>Peyton Walters</span>
+            <span> <a href="https://pawalt.github.io/posts/index.xml" target="_blank" title="rss"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-rss"><path d="M4 11a9 9 0 0 1 9 9"></path><path d="M4 4a16 16 0 0 1 16 16"></path><circle cx="5" cy="19" r="1"></circle></svg></a></span>
+        </div>
+    </div>
+    <div class="footer__inner">
+        <div class="footer__content">
+
+        </div>
+    </div>
+    <div class="footer__inner">
+        <div class="footer__content">
+            <span>Powered by <a href="http://gohugo.io">Hugo</a></span>
+            <span>Made with &#10084; by <a href="https://github.com/rhazdon">rhazdon</a></span>
+        </div>
+    </div>
+</footer>
+
+            
+        </div>
+
+        
+
+
+
+
+<script type="text/javascript" src="/bundle.min.4c3fb12a087ceed4a52cb5d57068a9795c7069617a01ca70f788052ad66e1791779e6c72686e1dc0ca13dc03b0203204b6566bb0dd1ee80de2b7ff4d8fe53db2.js" integrity="sha512-TD&#43;xKgh87tSlLLXVcGipeVxwaWF6Acpw94gFKtZuF5F3nmxyaG4dwMoT3AOwIDIEtlZrsN0e6A3it/9Nj&#43;U9sg=="></script>
+
+
+
+    </body>
+</html>

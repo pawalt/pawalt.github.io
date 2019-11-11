@@ -1,138 +1,1660 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
-  <channel>
-    <title>Posts on Peyton Walters</title>
-    <link>https://pawalt.github.io/posts/</link>
-    <description>Recent content in Posts on Peyton Walters</description>
-    <generator>Hugo -- gohugo.io</generator>
-    <language>en-us</language>
-    <copyright>Peyton Walters</copyright>
-    <lastBuildDate>Fri, 26 Jul 2019 00:00:00 +0000</lastBuildDate>
-    
-	<atom:link href="https://pawalt.github.io/posts/index.xml" rel="self" type="application/rss+xml" />
-    
-    
-    <item>
-      <title>Automating k3s Deployment on Proxmox</title>
-      <link>https://pawalt.github.io/posts/2019/07/automating-k3s-deployment-on-proxmox/</link>
-      <pubDate>Fri, 26 Jul 2019 00:00:00 +0000</pubDate>
-      
-      <guid>https://pawalt.github.io/posts/2019/07/automating-k3s-deployment-on-proxmox/</guid>
-      <description>For about 2 years now, I&amp;rsquo;ve been very interested in learning Kubernetes and potentially using it in my homelab, but there&amp;rsquo;s always been one main thing holding me back: the complexity. To get Kubernetes up the first time, I had to spin up a bunch of VMs manually and then put tons of binaries on each one of them. Even if I could get a cluster spun up, there was no chance I could reproduce my work or deploy anything useful on the cluster.</description>
-    </item>
-    
-    <item>
-      <title>Caplance Development Update 3</title>
-      <link>https://pawalt.github.io/posts/2019/07/caplance-development-update-3/</link>
-      <pubDate>Sun, 07 Jul 2019 00:00:00 +0000</pubDate>
-      
-      <guid>https://pawalt.github.io/posts/2019/07/caplance-development-update-3/</guid>
-      <description>🎉 We made it! 🎉 After 6 months of work, Caplance is finally at MVP. The brief release notes can be found here.
+    <channel>
+        <title>Posts on Peyton Walters</title>
+        <link>https://pawalt.github.io/posts/</link>
+        <description>Recent content in Posts on Peyton Walters</description>
+        <generator>Hugo -- gohugo.io</generator>
+        <language>en-us</language>
+        <copyright>Peyton Walters</copyright>
+        <lastBuildDate>Fri, 26 Jul 2019 00:00:00 +0000</lastBuildDate>
+        <atom:link href="https://pawalt.github.io/posts/index.xml" rel="self" type="application/rss+xml" />
+        
+        <item>
+            <title>Automating k3s Deployment on Proxmox</title>
+            <link>https://pawalt.github.io/posts/2019/07/automating-k3s-deployment-on-proxmox/</link>
+            <pubDate>Fri, 26 Jul 2019 00:00:00 +0000</pubDate>
+            
+            <guid>https://pawalt.github.io/posts/2019/07/automating-k3s-deployment-on-proxmox/</guid>
+            <description>For about 2 years now, I&amp;rsquo;ve been very interested in learning Kubernetes and potentially using it in my homelab, but there&amp;rsquo;s always been one main thing holding me back: the complexity. To get Kubernetes up the first time, I had to spin up a bunch of VMs manually and then put tons of binaries on each one of them. Even if I could get a cluster spun up, there was no chance I could reproduce my work or deploy anything useful on the cluster.</description>
+            <content type="html"><![CDATA[
+
+<p>For about 2 years now, I&rsquo;ve been very interested in learning Kubernetes and potentially using it in my homelab, but there&rsquo;s always been one main thing holding me back: the complexity. To get Kubernetes up the first time, I had to spin up a bunch of VMs manually and then put tons of binaries on each one of them. Even if I could get a cluster spun up, there was no chance I could reproduce my work or deploy anything useful on the cluster.</p>
+
+<p>All of this changed when I found out about <a href="https://github.com/rancher/k3s">k3s</a>. k3s allows you to run a full Kubernetes-compliant cluster without &ldquo;a PhD in k8s clusterology&rdquo;. Its main innovation is packaging all the normal Kubernetes components into a single binary and refactoring some authentication to make it much easier for nodes to join the cluster.</p>
+
+<p>Combined with some Ansible and Terraform knowledge, I decided to get cooking on some automation to make spinning up a new cluster a simple command.</p>
+
+<h2 id="prerequisites">Prerequisites</h2>
+
+<p>There are a few things I&rsquo;m not going to cover in this guide that you need to get started:</p>
+
+<ul>
+<li>Install Terraform
+
+<ul>
+<li>Just download Terraform from <a href="https://www.terraform.io/downloads.html">the downloads page</a> and drop it somewhere in your <code>$PATH</code></li>
+</ul></li>
+<li>Install the <a href="https://github.com/Telmate/terraform-provider-proxmox">Terraform Proxmox provider</a>
+
+<ul>
+<li>Use the <code>go install</code> command found in the README</li>
+<li>Drop the binaries into <code>~/.terraform.d/plugins/</code></li>
+</ul></li>
+<li>Have a Proxmox host</li>
+<li>Install <a href="https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html">Ansible</a></li>
+</ul>
+
+<h2 id="building-a-cloud-init-ubuntu-template">Building a cloud-init Ubuntu template</h2>
+
+<p>In order for Terraform to work smoothly with new VMs, we need to make a template VM that has <a href="https://cloud-init.io/">cloud-init</a> on it. Cloud-init adds some packages to the VM that makes automatic provisioning possible. Thankfully, Proxmox has pretty good support for it.</p>
+
+<p>SSH into your Proxmox host, and enter these commmands to create an Ubuntu VM with cloud-init:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ wget https://cloud-images.ubuntu.com/bionic/current/bionic-server-cloudimg-amd64.img
+<span style="color:#75715e"># Export whatever storage pool you want to use to hold your VM images. Mine just happens to be named hermes_data</span>
+$ export STORAGE_POOL<span style="color:#f92672">=</span>hermes_data
+$ qm create <span style="color:#ae81ff">8000</span> --memory <span style="color:#ae81ff">2048</span> --net0 virtio,bridge<span style="color:#f92672">=</span>vmbr0
+$ qm importdisk <span style="color:#ae81ff">8000</span> bionic-server-cloudimg-amd64.img $STORAGE_POOL
+Formatting <span style="color:#e6db74">&#39;/data/images/8000/vm-8000-disk-0.raw&#39;</span>, fmt<span style="color:#f92672">=</span>raw size<span style="color:#f92672">=</span><span style="color:#ae81ff">2361393152</span>
+    <span style="color:#f92672">(</span><span style="color:#ae81ff">100</span>.00/100%<span style="color:#f92672">)</span>
+$ qm set <span style="color:#ae81ff">8000</span> --scsihw virtio-scsi-pci --scsi0 $STORAGE_POOL:8000/vm-8000-disk-0.raw
+update VM <span style="color:#ae81ff">8000</span>: -scsi0 hermes_data:8000/vm-8000-disk-0.raw -scsihw virtio-scsi-pci
+$ qm set <span style="color:#ae81ff">8000</span> --name ubuntu-ci
+update VM <span style="color:#ae81ff">8000</span>: -name ubuntu-ci</code></pre></div>
+<p>Now we have a VM with all the appropriate cloud-init packages installed. Now we just have to attach the hardware that cloud-init requires, and we can template the VM.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ qm set <span style="color:#ae81ff">8000</span> --ide2 $STORAGE_POOL:cloudinit
+update VM <span style="color:#ae81ff">8000</span>: -ide2 hermes_data:cloudinit
+Formatting <span style="color:#e6db74">&#39;/data/images/8000/vm-8000-cloudinit.qcow2&#39;</span>, fmt<span style="color:#f92672">=</span>qcow2 size<span style="color:#f92672">=</span><span style="color:#ae81ff">4194304</span> cluster_size<span style="color:#f92672">=</span><span style="color:#ae81ff">65536</span> preallocation<span style="color:#f92672">=</span>metadata lazy_refcounts<span style="color:#f92672">=</span>off refcount_bits<span style="color:#f92672">=</span><span style="color:#ae81ff">16</span>
+$ qm set <span style="color:#ae81ff">8000</span> --boot c --bootdisk scsi0
+update VM <span style="color:#ae81ff">8000</span>: -boot c -bootdisk scsi0
+$ qm set <span style="color:#ae81ff">8000</span> --serial0 socket --vga serial0
+update VM <span style="color:#ae81ff">8000</span>: -serial0 socket -vga serial0
+$ qm template <span style="color:#ae81ff">8000</span></code></pre></div>
+<p>There we go! We now have a template VM that we can build our k3s nodes off of.</p>
+
+<h2 id="deploying-the-vms">Deploying the VMs</h2>
+
+<p>Now, on whatever machine you have Ansible and Terraform installed on, clone down my <code>proxmox-k3s</code> repo:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ git clone https://github.com/Pwpon500/proxmox-k3s
+Cloning into <span style="color:#e6db74">&#39;proxmox-k3s&#39;</span>...
+remote: Enumerating objects: <span style="color:#ae81ff">64</span>, <span style="color:#66d9ef">done</span>.
+remote: Counting objects: <span style="color:#ae81ff">100</span>% <span style="color:#f92672">(</span><span style="color:#ae81ff">64</span>/64<span style="color:#f92672">)</span>, <span style="color:#66d9ef">done</span>.
+remote: Compressing objects: <span style="color:#ae81ff">100</span>% <span style="color:#f92672">(</span><span style="color:#ae81ff">38</span>/38<span style="color:#f92672">)</span>, <span style="color:#66d9ef">done</span>.
+remote: Total <span style="color:#ae81ff">64</span> <span style="color:#f92672">(</span>delta <span style="color:#ae81ff">3</span><span style="color:#f92672">)</span>, reused <span style="color:#ae81ff">64</span> <span style="color:#f92672">(</span>delta <span style="color:#ae81ff">3</span><span style="color:#f92672">)</span>, pack-reused <span style="color:#ae81ff">0</span>
+Unpacking objects: <span style="color:#ae81ff">100</span>% <span style="color:#f92672">(</span><span style="color:#ae81ff">64</span>/64<span style="color:#f92672">)</span>, <span style="color:#66d9ef">done</span>.
+$ cd proxmox-k3s/proxmox-tf/prod</code></pre></div>
+<p>Now, edit the <code>main.tf</code> file to reflect the IPs of all your nodes as well as what SSH keys you want to use. Next, export the appropriate variables so that the Proxmox Terraform provider can connect to the Proxmox API:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ export PM_API_URL<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;https://&lt;node_ip&gt;:8006/api2/json&#34;</span>&lt;Paste&gt;
+$ export PM_USER<span style="color:#f92672">=</span>root@pam
+$ export PM_PASS<span style="color:#f92672">=</span>&lt;your_pass_here&gt;</code></pre></div>
+<p>If you don&rsquo;t set any of these, you&rsquo;ll be prompted for them whenever you do a <code>terraform plan</code> or a <code>terraform apply</code>.</p>
+
+<p>Without any further ado, let&rsquo;s create some VMs!</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ terraform init
+$ terraform plan
+$ terraform apply</code></pre></div>
+<p>These commands will have a lot of output, but I don&rsquo;t want to paste it all here. It should be clear if things have worked.</p>
+
+<p>Wait a few minutes for the VMs to finish doing their cloud-init inital configuration, and continue to the next step.</p>
+
+<h2 id="applying-k3s-configs">Applying k3s Configs</h2>
+
+<p>Now, go into the <code>ansible-roles</code> directory. All you need to edit here is the <code>inventory.toml</code> file. Change the IPs to whatever yours are, and add as many hosts as you created. The only important thing to remember is to have exactly 1 master node and to make the rest workers.</p>
+
+<p>Once you&rsquo;ve entered in the appropriate IPs, apply your playbook:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ ansible-playbook -i inventory.toml playbook.yml -u ubuntu</code></pre></div>
+<p>This command will take a few minutes to complete, but if it finishes successfully, you have a fully working k3s cluster!</p>
+
+<h2 id="testing-out-the-cluster">Testing Out the Cluster</h2>
+
+<p>To test out the cluster, we&rsquo;re going to go into the master node and use the in-built <code>k3s kubectl</code>:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ ssh ubuntu@172.30.100.80
+ubuntu@k3s-node-0:~$ sudo k3s kubectl get nodes
+NAME         STATUS   ROLES    AGE   VERSION
+k3s-node-0   Ready    master   2d    v1.14.4-k3s.1
+k3s-node-1   Ready    worker   2d    v1.14.4-k3s.1
+k3s-node-2   Ready    worker   2d    v1.14.4-k3s.1
+k3s-node-3   Ready    worker   2d    v1.14.4-k3s.1</code></pre></div>
+<p>Looks pretty good. We have all the nodes properly joined up. Let&rsquo;s start a pod just to test things out:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ sudo k3s kubectl run lab-nginx --image<span style="color:#f92672">=</span>nginx --port<span style="color:#f92672">=</span><span style="color:#ae81ff">80</span>
+kubectl run --generator<span style="color:#f92672">=</span>deployment/apps.v1 is DEPRECATED and will be removed in a future version. Use kubectl run --generator<span style="color:#f92672">=</span>run-pod/v1 or kubectl create instead.
+deployment.apps/lab-nginx created
+$ sudo k3s kubectl expose deployment lab-nginx --type<span style="color:#f92672">=</span>NodePort
+service/lab-nginx exposed
+$ sudo k3s kubectl port-forward svc/lab-nginx <span style="color:#ae81ff">8080</span>:80 &amp;
+$ curl localhost:8080
+&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;
+&lt;title&gt;Welcome to nginx!&lt;/title&gt;
+&lt;style&gt;
+    body <span style="color:#f92672">{</span>
+        width: 35em;
+        margin: <span style="color:#ae81ff">0</span> auto;
+        font-family: Tahoma, Verdana, Arial, sans-serif;
+    <span style="color:#f92672">}</span>
+&lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+&lt;h1&gt;Welcome to nginx!&lt;/h1&gt;
+&lt;p&gt;If you see this page, the nginx web server is successfully installed and
+working. Further configuration is required.&lt;/p&gt;
+
+&lt;p&gt;For online documentation and support please refer to
+&lt;a href<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;http://nginx.org/&#34;</span>&gt;nginx.org&lt;/a&gt;.&lt;br/&gt;
+Commercial support is available at
+&lt;a href<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;http://nginx.com/&#34;</span>&gt;nginx.com&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;&lt;em&gt;Thank you <span style="color:#66d9ef">for</span> using nginx.&lt;/em&gt;&lt;/p&gt;
+&lt;/body&gt;
+&lt;/html&gt;</code></pre></div>
+<p>Woohoo! Looks to me like this thing&rsquo;s working. If you want to get out the kubeconfig to run <code>kubectl</code> from your local machine, it&rsquo;s in <code>/etc/rancher/k3s/k3s.yaml</code>.</p>
+
+<p>Now if you don&rsquo;t want it anymore, you can do a simple <code>terraform destroy</code> in the <code>proxmox-tf</code> directory, and you&rsquo;re back to where you started.</p>
+
+<h2 id="conclusion">Conclusion</h2>
+
+<p>Obviously, what we&rsquo;ve done here is exciting because we get a Kubernetes cluster with a pretty simple process. It&rsquo;s also crazy useful that we can now spin up entire VM clusters with just a simple command. Before, I had to do this through the Proxmox Web UI, but not anymore.</p>
+
+<p>I hope all this was helpful! I had a ton of fun with this, and there&rsquo;s more of this kind of material coming in the future.</p>
+]]></content>
+        </item>
+        
+        <item>
+            <title>Caplance Development Update 3</title>
+            <link>https://pawalt.github.io/posts/2019/07/caplance-development-update-3/</link>
+            <pubDate>Sun, 07 Jul 2019 00:00:00 +0000</pubDate>
+            
+            <guid>https://pawalt.github.io/posts/2019/07/caplance-development-update-3/</guid>
+            <description>🎉 We made it! 🎉 After 6 months of work, Caplance is finally at MVP. The brief release notes can be found here.
 To get to MVP, I had to implement the following functionality:
  Logging Config file parsing  Combining all the previous updates, we get the following feature set for the MVP:
  Packet listening Packet forwarding over UDP Direct reply from backends, allowing the load balancer to only have to handle incoming traffic Dynamic backend registration and deregistration Backend commands and health checks Logging Config file parsing  I&amp;rsquo;ll briefly cover the improvements so far and then give a short demo of Caplance working.</description>
-    </item>
-    
-    <item>
-      <title>Caplance Development Update 2</title>
-      <link>https://pawalt.github.io/posts/2019/06/caplance-development-update-2/</link>
-      <pubDate>Sun, 30 Jun 2019 00:00:00 +0000</pubDate>
-      
-      <guid>https://pawalt.github.io/posts/2019/06/caplance-development-update-2/</guid>
-      <description>I&amp;rsquo;m back! Over the past few weeks, I&amp;rsquo;ve had much more time to work on Caplance than I had in the prior months, so, naturally, a ton of work has gotten done in these few weeks. Specifically, I&amp;rsquo;ve implemented the following functionality:
+            <content type="html"><![CDATA[
+
+<p>🎉 We made it! 🎉 After 6 months of work, Caplance is finally at MVP. The brief release notes can be found <a href="https://github.com/Pwpon500/caplance/releases/tag/v0.1.0">here</a>.</p>
+
+<p>To get to MVP, I had to implement the following functionality:</p>
+
+<ul>
+<li>Logging</li>
+<li>Config file parsing</li>
+</ul>
+
+<p>Combining all the previous updates, we get the following feature set for the MVP:</p>
+
+<ul>
+<li>Packet listening</li>
+<li>Packet forwarding over UDP</li>
+<li>Direct reply from backends, allowing the load balancer to only have to handle incoming traffic</li>
+<li>Dynamic backend registration and deregistration</li>
+<li>Backend commands and health checks</li>
+<li>Logging</li>
+<li>Config file parsing</li>
+</ul>
+
+<p>I&rsquo;ll briefly cover the improvements so far and then give a short demo of Caplance working.</p>
+
+<h2 id="logging">Logging</h2>
+
+<p>For logging, I decided to use the <a href="https://github.com/sirupsen/logrus">Logrus</a> package. It&rsquo;s frequently used by other packages, and it was super easy to switch to. I had already implemented logging with the <code>log</code> package from the go stdlib, so by importing <code>log github.com/sirupsen/logrus</code> in its place, I got instant compatibility. From there, I changed the log levels as appropriate. I&rsquo;m using the following log levels:</p>
+
+<ul>
+<li>Debug</li>
+<li>Info</li>
+<li>Error</li>
+<li>Fatal</li>
+<li>Panic</li>
+</ul>
+
+<p>I&rsquo;d like to eventually get away from panic and just call a graceful stop function with an error code, but that&rsquo;s nitpicking pretty hard considering where Caplance is right now. Here&rsquo;s a little demo of what the logging looks like:</p>
+
+<p>Load balancer:</p>
+
+<p><img src="/img/caplance_server_logging_demo.png" alt="caplance server logging demo" /></p>
+
+<p>Backend:</p>
+
+<p><img src="/img/caplance_client_logging_demo.png" alt="caplance client logging demo" /></p>
+
+<h2 id="config-file-parsing">Config File Parsing</h2>
+
+<p>For parsing configuration files, I used <a href="https://github.com/spf13/viper">Viper</a>. Viper allows me to use JSON, HCL, TOML, or YAML to write my config files so long as they follow my defined structure. The structure for configuration files follows this struct:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">config</span> <span style="color:#66d9ef">struct</span> {
+    <span style="color:#a6e22e">Client</span> <span style="color:#66d9ef">struct</span> {
+        <span style="color:#a6e22e">ConnectIP</span> <span style="color:#66d9ef">string</span>
+        <span style="color:#a6e22e">DataIP</span>    <span style="color:#66d9ef">string</span>
+        <span style="color:#a6e22e">Name</span>      <span style="color:#66d9ef">string</span>
+    }
+    <span style="color:#a6e22e">Server</span> <span style="color:#66d9ef">struct</span> {
+        <span style="color:#a6e22e">MngIP</span>           <span style="color:#66d9ef">string</span>
+        <span style="color:#a6e22e">BackendCapacity</span> <span style="color:#66d9ef">int</span>
+    }
+    <span style="color:#a6e22e">VIP</span>  <span style="color:#66d9ef">string</span>
+    <span style="color:#a6e22e">Test</span> <span style="color:#66d9ef">bool</span>
+
+    <span style="color:#a6e22e">HealthRate</span>   <span style="color:#66d9ef">int</span>
+    <span style="color:#a6e22e">ReadTimeout</span>  <span style="color:#66d9ef">int</span>
+    <span style="color:#a6e22e">WriteTimeout</span> <span style="color:#66d9ef">int</span>
+
+    <span style="color:#a6e22e">Sockaddr</span> <span style="color:#66d9ef">string</span>
+}</code></pre></div>
+<p>The following defaults are also set:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#a6e22e">viper</span>.<span style="color:#a6e22e">SetDefault</span>(<span style="color:#e6db74">&#34;Test&#34;</span>, <span style="color:#66d9ef">false</span>)
+<span style="color:#a6e22e">viper</span>.<span style="color:#a6e22e">SetDefault</span>(<span style="color:#e6db74">&#34;HealthRate&#34;</span>, <span style="color:#ae81ff">20</span>)
+<span style="color:#a6e22e">viper</span>.<span style="color:#a6e22e">SetDefault</span>(<span style="color:#e6db74">&#34;RegisterTimeout&#34;</span>, <span style="color:#ae81ff">10</span>)
+<span style="color:#a6e22e">viper</span>.<span style="color:#a6e22e">SetDefault</span>(<span style="color:#e6db74">&#34;ReadTimeout&#34;</span>, <span style="color:#ae81ff">30</span>)
+<span style="color:#a6e22e">viper</span>.<span style="color:#a6e22e">SetDefault</span>(<span style="color:#e6db74">&#34;WriteTimeout&#34;</span>, <span style="color:#ae81ff">10</span>)
+<span style="color:#a6e22e">viper</span>.<span style="color:#a6e22e">SetDefault</span>(<span style="color:#e6db74">&#34;Sockaddr&#34;</span>, <span style="color:#e6db74">&#34;/var/run/caplance.sock&#34;</span>)</code></pre></div>
+<p>In YAML, an example config file looks like this:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml">vip: <span style="color:#ae81ff">10.0.0.50</span>
+
+client:
+  dataIP: <span style="color:#ae81ff">10.0.0.2</span>
+  name: backend<span style="color:#ae81ff">-1</span>
+
+server:
+  mngIP: <span style="color:#ae81ff">10.0.0.1</span>
+  backendCapacity: <span style="color:#ae81ff">53</span></code></pre></div>
+<p>This config file accepts all given defaults, only filling in the required fields. I&rsquo;ll write more detailed documentation on the config file format soon, but for now, this will do. What&rsquo;s really cool about Viper is that I can just tell it where to go looking for config files, give it a struct to put data into, and it does everything else for me:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">readConfig</span>() {
+    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">configLocation</span> <span style="color:#f92672">!=</span> <span style="color:#e6db74">&#34;&#34;</span> {
+        <span style="color:#a6e22e">viper</span>.<span style="color:#a6e22e">SetConfigFile</span>(<span style="color:#a6e22e">configLocation</span>)
+    }
+
+    <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">viper</span>.<span style="color:#a6e22e">ReadInConfig</span>()
+    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+        <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#e6db74">&#34;Failed to read in config: &#34;</span> <span style="color:#f92672">+</span> <span style="color:#a6e22e">err</span>.<span style="color:#a6e22e">Error</span>())
+    }
+
+    <span style="color:#a6e22e">conf</span> = <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">config</span>{}
+    <span style="color:#a6e22e">err</span> = <span style="color:#a6e22e">viper</span>.<span style="color:#a6e22e">Unmarshal</span>(<span style="color:#a6e22e">conf</span>)
+    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+        <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#e6db74">&#34;Failed to unmarshal config into struct: &#34;</span> <span style="color:#f92672">+</span> <span style="color:#a6e22e">err</span>.<span style="color:#a6e22e">Error</span>())
+    }
+}</code></pre></div>
+<p>Here, I&rsquo;m just telling Viper that if a specific config file location exists, use it. Then, I read in the config and unmarshal it into the <code>conf</code> struct for later use. Pretty cool stuff.</p>
+
+<h1 id="demo">Demo</h1>
+
+<p>Now for the fun part! I&rsquo;ve prepared a brief demo just to show that Caplance works as we expect it to.</p>
+
+<p>In this demo, I&rsquo;ll have the following hosts:</p>
+
+<table>
+<thead>
+<tr>
+<th>Host</th>
+<th>Description</th>
+<th>IP</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>h1</td>
+<td>Load Balancer</td>
+<td>10.0.0.1</td>
+</tr>
+
+<tr>
+<td>h2</td>
+<td>Backend 1</td>
+<td>10.0.0.2</td>
+</tr>
+
+<tr>
+<td>h3</td>
+<td>Backend 2</td>
+<td>10.0.0.3</td>
+</tr>
+
+<tr>
+<td>h4</td>
+<td>Backend 3</td>
+<td>10.0.0.4</td>
+</tr>
+
+<tr>
+<td>h5</td>
+<td>Client</td>
+<td>10.0.0.5</td>
+</tr>
+</tbody>
+</table>
+
+<p>The virtual IP for the cluster that the client will be calling to is 10.0.0.50. Let&rsquo;s start things up! I&rsquo;m only going to show output from h1 and h2 right now, but h2 and h3 are showing the same as h2.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">h1 $ ../caplance server -f confs/simple_1.yaml
+INFO<span style="color:#f92672">[</span><span style="color:#ae81ff">0000</span><span style="color:#f92672">]</span> Reading in config file
+INFO<span style="color:#f92672">[</span><span style="color:#ae81ff">0000</span><span style="color:#f92672">]</span> Starting load balancer
+
+h2 $ ../caplance client -f confs/simple_1.yaml
+INFO<span style="color:#f92672">[</span><span style="color:#ae81ff">0000</span><span style="color:#f92672">]</span> Reading in config file
+INFO<span style="color:#f92672">[</span><span style="color:#ae81ff">0000</span><span style="color:#f92672">]</span> Starting client
+<span style="color:#ae81ff">2019</span>/07/07 <span style="color:#ae81ff">12</span>:42:39 rpc.Register: method <span style="color:#e6db74">&#34;Start&#34;</span> has <span style="color:#ae81ff">2</span> input parameters; needs exactly three</code></pre></div>
+<p>Now, I&rsquo;m going to start nginx on the backends and see what happens when I curl from h1!</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">h2 $ nginx -p <span style="color:#e6db74">&#34;&#34;</span> -c confs/nginx_1.conf
+
+h5 $ ./repeat_curl.sh <span style="color:#ae81ff">10</span>
+Welcome to Onion Backend <span style="color:#ae81ff">2</span>!
+Welcome to Onion Backend <span style="color:#ae81ff">1</span>!
+Welcome to Onion Backend <span style="color:#ae81ff">2</span>!
+Welcome to Onion Backend <span style="color:#ae81ff">2</span>!
+Welcome to Onion Backend <span style="color:#ae81ff">1</span>!
+Welcome to Onion Backend <span style="color:#ae81ff">1</span>!
+Welcome to Onion Backend <span style="color:#ae81ff">2</span>!
+Welcome to Onion Backend <span style="color:#ae81ff">2</span>!
+Welcome to Onion Backend <span style="color:#ae81ff">3</span>!
+Welcome to Onion Backend <span style="color:#ae81ff">2</span>!</code></pre></div>
+<p>Looks like it&rsquo;s working! In this limited example, it seems that we&rsquo;re probing 3 much less than the others, but that&rsquo;s just random chance. If we run this over many more iterations and count occurences out, we see things level out:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">h5 $ ./repeat_curl.sh <span style="color:#ae81ff">1000</span> | sort | uniq -c
+    <span style="color:#ae81ff">330</span> Welcome to Onion Backend <span style="color:#ae81ff">1</span>!
+    <span style="color:#ae81ff">336</span> Welcome to Onion Backend <span style="color:#ae81ff">2</span>!
+    <span style="color:#ae81ff">333</span> Welcome to Onion Backend <span style="color:#ae81ff">3</span>!</code></pre></div>
+<p>Looks like things are working out! If you want to run this demo yourself, all the required files are <a href="https://github.com/Pwpon500/caplance/tree/master/demo">right in the repo</a>.</p>
+
+<h1 id="conclusion">Conclusion</h1>
+
+<p>This was by far the most difficult project I&rsquo;ve ever worked on, so having it done feels pretty surreal. Before signing off, I want to thank <a href="https://github.com/davish">Davis</a>, <a href="https://github.com/ArmaanT">Armaan</a>, and <a href="https://github.com/benleim">Ben</a> for listening to me rant and rant about Caplance. Having an ear to talk to is unimaginably helpful when working on a project like this.</p>
+
+<p>Despite some of the language I&rsquo;ve been using, this is most certainly not the last work I&rsquo;ll be doing on Caplance. I still have much to learn and features I want to implement. Until then, however, thanks for reading, and I&rsquo;ll see you next time.</p>
+]]></content>
+        </item>
+        
+        <item>
+            <title>Caplance Development Update 2</title>
+            <link>https://pawalt.github.io/posts/2019/06/caplance-development-update-2/</link>
+            <pubDate>Sun, 30 Jun 2019 00:00:00 +0000</pubDate>
+            
+            <guid>https://pawalt.github.io/posts/2019/06/caplance-development-update-2/</guid>
+            <description>I&amp;rsquo;m back! Over the past few weeks, I&amp;rsquo;ve had much more time to work on Caplance than I had in the prior months, so, naturally, a ton of work has gotten done in these few weeks. Specifically, I&amp;rsquo;ve implemented the following functionality:
  Backend registration The following controls from the backends:  PAUSE DEREGISTER RESUME HEALTH  caplancectl to tell a running client process to issue one of those commands Graceful stop for backends Packet listening on NFQUEUE Refactor project structure  If you&amp;rsquo;ve been keeping track, you&amp;rsquo;ll notice that this puts us very close to the Caplance MVP!</description>
-    </item>
-    
-    <item>
-      <title>NFQUEUE and the Mysterious RESET</title>
-      <link>https://pawalt.github.io/posts/2019/06/nfqueue-and-the-mysterious-reset/</link>
-      <pubDate>Thu, 27 Jun 2019 00:00:00 +0000</pubDate>
-      
-      <guid>https://pawalt.github.io/posts/2019/06/nfqueue-and-the-mysterious-reset/</guid>
-      <description>While working on my load balancer, Caplance, I ran into a very strange error when trying to establish a connection between a client and a backend. Before I go to deep, though, let me give a quick intro into how TCP connection establishment works.
+            <content type="html"><![CDATA[
+
+<p>I&rsquo;m back! Over the past few weeks, I&rsquo;ve had much more time to work on Caplance than I had in the prior months, so, naturally, a ton of work has gotten done in these few weeks. Specifically, I&rsquo;ve implemented the following functionality:</p>
+
+<ul>
+<li>Backend registration</li>
+<li>The following controls from the backends:
+
+<ul>
+<li>PAUSE</li>
+<li>DEREGISTER</li>
+<li>RESUME</li>
+<li>HEALTH</li>
+</ul></li>
+<li><code>caplancectl</code> to tell a running client process to issue one of those commands</li>
+<li>Graceful stop for backends</li>
+<li>Packet listening on NFQUEUE</li>
+<li>Refactor project structure</li>
+</ul>
+
+<p>If you&rsquo;ve been keeping track, you&rsquo;ll notice that this puts us very close to the Caplance MVP! All that&rsquo;s left is config file parsing and some housekeeping.</p>
+
+<p>Here are some of the more technically interesting parts of this revision of Caplance:</p>
+
+<h2 id="nfqueue">NFQUEUE</h2>
+
+<p>If you&rsquo;ve got some time and an appetite for some very interesting debugging, I highly recommend taking a look at <a href="https://pawalt.github.io/posts/2019/06/nfqueue-and-the-mysterious-reset/">my post about NFQUEUE</a>. If you don&rsquo;t, here&rsquo;s the TL;DR:</p>
+
+<p>I switched how listening works in Caplance again. Now, I&rsquo;m using NFQUEUE, an iptables option to hand off packets from an iptables rule to a program in userspace before any packet processing is done.</p>
+
+<h2 id="backend-communication">Backend Communication</h2>
+
+<p>One of the things I wanted to learn from this project was how to write a system for keeping track of state between two hosts. I looked (extensively) into using RPC for this, but it just didn&rsquo;t seem like the right move. RPC is designed to make &ldquo;remote process calls&rdquo;, but I don&rsquo;t really need that. I need a way to keep track of state. I could&rsquo;ve mangled RPC to do this, but I think just writing it myself turned out to be more elegant.</p>
+
+<p>The first step in creating this was creating the interface. I created a simple interface called <code>Communicator</code> to write data, read data, and close the underlying connection:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#75715e">// Communicator is the connection manager for a backend
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Communicator</span> <span style="color:#66d9ef">interface</span> {
+    <span style="color:#a6e22e">ReadLine</span>() (<span style="color:#66d9ef">string</span>, <span style="color:#66d9ef">error</span>)
+    <span style="color:#a6e22e">WriteLine</span>(<span style="color:#a6e22e">data</span> <span style="color:#66d9ef">string</span>) <span style="color:#66d9ef">error</span>
+    <span style="color:#a6e22e">Close</span>() <span style="color:#66d9ef">error</span>
+}</code></pre></div>
+<p>To actually implement this, I created a <code>TCPCommunicator</code> struct and filled in the methods.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#75715e">// TCPCommunicator is an implementation of BackendCommunicator over TCP
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">TCPCommunicator</span> <span style="color:#66d9ef">struct</span> {
+    <span style="color:#a6e22e">reader</span>       <span style="color:#f92672">*</span><span style="color:#a6e22e">bufio</span>.<span style="color:#a6e22e">Reader</span>
+    <span style="color:#a6e22e">writer</span>       <span style="color:#f92672">*</span><span style="color:#a6e22e">bufio</span>.<span style="color:#a6e22e">Writer</span>
+    <span style="color:#a6e22e">conn</span>         <span style="color:#a6e22e">net</span>.<span style="color:#a6e22e">Conn</span>
+    <span style="color:#a6e22e">readTimeout</span>  <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Duration</span>
+    <span style="color:#a6e22e">writeTimeout</span> <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Duration</span>
+}</code></pre></div>
+<p>This struct has a reader and writer to get data from the underling connection. It also has a readTimeout and writeTimeout. While the writeTimeout is fairly mundane, the readTimeout turns out to be surprisingly useful.</p>
+
+<p>In order to deregister a backend after a certain period of inactivity, I can just use the <code>SetReadDeadline(t time.Time) error</code> function with the <code>readTimeout</code>. Then, if the read errors out, and the error is a timeout, I know that the inactivity window has closed. Baking this logic into the TCPCommunicator, I now have a powerful tool that I can use on both the backend and load balancer side!</p>
+
+<p>I also implemented the following commands that the client can send to the server:</p>
+
+<ul>
+<li>PAUSE - client requesting to stay registered but not have packets forwarded to it</li>
+<li>DEREGISTER - client requesting to deregister</li>
+<li>RESUME - client requesting to have packets forwarded after a PAUSE</li>
+<li>HEALTH - message sent every few seconds to stop server from deregistering the client due to inactivity</li>
+</ul>
+
+<p>The way these are implemented isn&rsquo;t particularly interesting. I&rsquo;m just using a bufio reader to read data off the connection and parsing it with simple string tools.</p>
+
+<h2 id="caplancectl">Caplancectl</h2>
+
+<p>This isn&rsquo;t the most complex part of Caplance by any means, but I was blown away by how simple the <code>net/rpc</code> package made writing caplancectl, so I wanted to share.</p>
+
+<p>Caplancectl connects to Caplance using a unix socket that Caplance creates at <code>/var/run/caplance.sock</code>. Caplance listens just as it would with a TCP listener:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">unixSock</span>, <span style="color:#a6e22e">err</span> = <span style="color:#a6e22e">net</span>.<span style="color:#a6e22e">Listen</span>(<span style="color:#e6db74">&#34;unix&#34;</span>, <span style="color:#a6e22e">SOCKADDR</span>)</code></pre></div>
+<p>Now that I&rsquo;ve got that socket, I can hand it off to the <code>rpc</code> package, and the rest of the networking is done for me!</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#a6e22e">rpc</span>.<span style="color:#a6e22e">Register</span>(<span style="color:#a6e22e">c</span>) <span style="color:#75715e">// registering the client to receive requests over rpc
+</span><span style="color:#75715e"></span><span style="color:#a6e22e">rpc</span>.<span style="color:#a6e22e">HandleHTTP</span>()
+<span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">Serve</span>(<span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">unixSock</span>, <span style="color:#66d9ef">nil</span>)</code></pre></div>
+<p>Now that I&rsquo;ve got the RPC listening, all I have to do is define some methods that the RPC can execute. The RPC registers any methods from the registered object that take two arguments for which the latter is a pointer and returns an error. More formally, the methods must have this signature:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">t</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">T</span>) <span style="color:#a6e22e">MethodName</span>(<span style="color:#a6e22e">argType</span> <span style="color:#a6e22e">T1</span>, <span style="color:#a6e22e">replyType</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">T2</span>) <span style="color:#66d9ef">error</span></code></pre></div>
+<p>For example, my pause function looks like this:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#75715e">// Pause command from caplancectl
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">c</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Client</span>) <span style="color:#a6e22e">Pause</span>(<span style="color:#a6e22e">req</span> <span style="color:#f92672">*</span><span style="color:#66d9ef">string</span>, <span style="color:#a6e22e">reply</span> <span style="color:#f92672">*</span><span style="color:#66d9ef">string</span>) <span style="color:#66d9ef">error</span> {
+    <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">pause</span>()
+    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">==</span> <span style="color:#66d9ef">nil</span> {
+        <span style="color:#f92672">*</span><span style="color:#a6e22e">reply</span> = <span style="color:#e6db74">&#34;Pause request sent&#34;</span>
+    } <span style="color:#66d9ef">else</span> {
+        <span style="color:#f92672">*</span><span style="color:#a6e22e">reply</span> = <span style="color:#e6db74">&#34;Pause request encountered an error: &#34;</span> <span style="color:#f92672">+</span> <span style="color:#a6e22e">err</span>.<span style="color:#a6e22e">Error</span>()
+    }
+    <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">nil</span>
+}</code></pre></div>
+<p>That&rsquo;s all that needs to be done from the server side! If you think that&rsquo;s easy, the client side is even easier.</p>
+
+<p>On the client side, I can just use the RPC package to dial and then call whatever method I want. For example, if I wanted to issue a pause request, I would only need this code:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#a6e22e">client</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">rpc</span>.<span style="color:#a6e22e">DialHTTP</span>(<span style="color:#e6db74">&#34;unix&#34;</span>, <span style="color:#a6e22e">SOCKADDR</span>)
+<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+    <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">err</span>)
+}
+
+<span style="color:#66d9ef">var</span> <span style="color:#a6e22e">reply</span> <span style="color:#66d9ef">string</span>
+<span style="color:#a6e22e">err</span> = <span style="color:#a6e22e">client</span>.<span style="color:#a6e22e">Call</span>(<span style="color:#e6db74">&#34;Client.Pause&#34;</span>, <span style="color:#e6db74">&#34;&#34;</span>, <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">reply</span>)
+<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+    <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">err</span>)
+}
+<span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Println</span>(<span style="color:#a6e22e">reply</span>)</code></pre></div>
+<p>Pretty cool, right?</p>
+
+<h1 id="future-work">Future Work</h1>
+
+<p>I&rsquo;m pretty close to MVP. To get there, I have to implement the following:</p>
+
+<ul>
+<li>Config file parsing</li>
+<li>Non-stdout logging</li>
+</ul>
+
+<p>I&rsquo;ve got some more features I&rsquo;d like to implement, but we&rsquo;re gonna focus on MVP for now. These shouldn&rsquo;t be too hard to get implemented, so keep you eyes peeled for update 3!</p>
+]]></content>
+        </item>
+        
+        <item>
+            <title>NFQUEUE and the Mysterious RESET</title>
+            <link>https://pawalt.github.io/posts/2019/06/nfqueue-and-the-mysterious-reset/</link>
+            <pubDate>Thu, 27 Jun 2019 00:00:00 +0000</pubDate>
+            
+            <guid>https://pawalt.github.io/posts/2019/06/nfqueue-and-the-mysterious-reset/</guid>
+            <description>While working on my load balancer, Caplance, I ran into a very strange error when trying to establish a connection between a client and a backend. Before I go to deep, though, let me give a quick intro into how TCP connection establishment works.
 Types of Message When establishing a TCP connection, there are 4 possible packet types you could see:
  SYN (S in tcpdump) - Always the first message sent.</description>
-    </item>
-    
-    <item>
-      <title>My Neovim Go Setup</title>
-      <link>https://pawalt.github.io/posts/2019/06/my-neovim-go-setup/</link>
-      <pubDate>Sat, 01 Jun 2019 00:00:00 +0000</pubDate>
-      
-      <guid>https://pawalt.github.io/posts/2019/06/my-neovim-go-setup/</guid>
-      <description>Recently, I moved from writing my Go in VSCode to writing it in Neovim. I did this for two main reasons:
+            <content type="html"><![CDATA[
+
+<p>While working on my load balancer, <a href="https://github.com/pwpon500/Caplance">Caplance</a>, I ran into a very strange error when trying to establish a connection between a client and a backend. Before I go to deep, though, let me give a quick intro into how TCP connection establishment works.</p>
+
+<h3 id="types-of-message">Types of Message</h3>
+
+<p>When establishing a TCP connection, there are 4 possible packet types you could see:</p>
+
+<ul>
+<li>SYN (<code>S</code> in <code>tcpdump</code>) - Always the first message sent. It is the message from the client to the server effectively saying &ldquo;I would like to connect.&rdquo;</li>
+<li>SYN-ACK (<code>S.</code> in <code>tcpdump</code>) - The server&rsquo;s reply to a SYN if it wishes to accept the connection.</li>
+<li>ACK (<code>A</code> or <code>.</code> in <code>tcpdump</code>) - The client&rsquo;s reply to a SYN-ACK, fully establishing the TCP connection.</li>
+<li>RESET (<code>R</code> in <code>tcpdump</code>) - The server&rsquo;s response to a SYN if it wishes to refuse the connection.</li>
+</ul>
+
+<p>In a successful connection, the order will be SYN, SYN-ACK, ACK. In an unsuccessful connection, the order will be SYN, RESET.</p>
+
+<h3 id="operating-systems-and-tcp">Operating Systems and TCP</h3>
+
+<p>When a program wants to use TCP, it asks the OS to &ldquo;bind&rdquo; to a TCP port. Then, when packets come into that TCP port, the OS hands off the packets to the program. The program can then reply to those packets however it wants (accepting or rejecting the incoming connections).</p>
+
+<p>If a program is not bound to a port and a SYN is sent to that port, the OS immediately replies to the SYN with a RESET.</p>
+
+<p>In the case of Caplance, the load balancer isn&rsquo;t listening on a specific TCP port. Instead, it listens for any and all TCP packets. As a result, no bindings are created by Caplance.</p>
+
+<h2 id="the-bug">The Bug</h2>
+
+<p>Ok, now on to the fun part. I had finally gotten to the point in Caplance where I could send a request to the load balancer&rsquo;s IP and have a backend respond to the request, or so I thought. For the purposes of this demo, h1 is the load balancer, h2 is the backend, and h3 is the client. 10.0.0.50 is the virtual IP that the load balancer is serving. Let&rsquo;s start up a netcat TCP server on h2 and try to send a request from h3:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">h2 $ nc -l <span style="color:#ae81ff">10</span>.0.0.50 <span style="color:#ae81ff">8080</span>
+
+h3 $ telnet <span style="color:#ae81ff">10</span>.0.0.50 <span style="color:#ae81ff">8080</span>
+Trying <span style="color:#ae81ff">10</span>.0.0.50...
+telnet: Unable to connect to remote host: Connection refused</code></pre></div>
+<p>Well, what can you expect really? Things never work on the first try. This time, let&rsquo;s do the exact same thing but use <code>tcpdump</code> to see what&rsquo;s happening on h2.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">h2 $ tcpdump -i any host <span style="color:#ae81ff">10</span>.0.0.50 and tcp -n
+tcpdump: verbose output suppressed, use -v or -vv <span style="color:#66d9ef">for</span> full protocol decode
+listening on any, link-type LINUX_SLL <span style="color:#f92672">(</span>Linux cooked<span style="color:#f92672">)</span>, capture size <span style="color:#ae81ff">262144</span> bytes
+<span style="color:#ae81ff">20</span>:57:32.941669 IP <span style="color:#ae81ff">10</span>.0.0.3.36040 &gt; <span style="color:#ae81ff">10</span>.0.0.50.8080: Flags <span style="color:#f92672">[</span>S<span style="color:#f92672">]</span>, seq <span style="color:#ae81ff">252176171</span>, win <span style="color:#ae81ff">29200</span>, options <span style="color:#f92672">[</span>mss <span style="color:#ae81ff">1460</span>,sackOK,TS val <span style="color:#ae81ff">2262321703</span> ecr <span style="color:#ae81ff">0</span>,nop,wscale <span style="color:#ae81ff">9</span><span style="color:#f92672">]</span>, length <span style="color:#ae81ff">0</span>
+<span style="color:#ae81ff">20</span>:57:32.941701 IP <span style="color:#ae81ff">10</span>.0.0.50.8080 &gt; <span style="color:#ae81ff">10</span>.0.0.3.36040: Flags <span style="color:#f92672">[</span>S.<span style="color:#f92672">]</span>, seq <span style="color:#ae81ff">492629165</span>, ack <span style="color:#ae81ff">252176172</span>, win <span style="color:#ae81ff">28960</span>, options <span style="color:#f92672">[</span>mss <span style="color:#ae81ff">1460</span>,sackOK,TS val <span style="color:#ae81ff">4192526147</span> ecr <span style="color:#ae81ff">2262321703</span>,nop,wscale <span style="color:#ae81ff">9</span><span style="color:#f92672">]</span>, length <span style="color:#ae81ff">0</span></code></pre></div>
+<p>Here, <code>tcpdump</code> is showing us that the backend is seeing 2 packets. One is a SYN from the client to the server, and one is a SYN-ACK from the server to the client. If you remember, these are exactly the messages we expect &hellip; minus an ACK from the client.</p>
+
+<p>At this point, the logical conclusion is that packets are able to flow from client to server, but the ones going server to client aren&rsquo;t making it. Just for sanity, let&rsquo;s see what the <code>tcpdump</code> output looks like for the client.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">h3 $ tcpdump -i any host <span style="color:#ae81ff">10</span>.0.0.3 and tcp -n
+tcpdump: verbose output suppressed, use -v or -vv <span style="color:#66d9ef">for</span> full protocol decode
+listening on any, link-type LINUX_SLL <span style="color:#f92672">(</span>Linux cooked<span style="color:#f92672">)</span>, capture size <span style="color:#ae81ff">262144</span> bytes
+<span style="color:#ae81ff">21</span>:11:45.055143 IP <span style="color:#ae81ff">10</span>.0.0.3.37388 &gt; <span style="color:#ae81ff">10</span>.0.0.50.8080: Flags <span style="color:#f92672">[</span>S<span style="color:#f92672">]</span>, seq <span style="color:#ae81ff">3009015791</span>, win <span style="color:#ae81ff">29200</span>, options <span style="color:#f92672">[</span>mss <span style="color:#ae81ff">1460</span>,sackOK,TS val <span style="color:#ae81ff">2263173829</span> ecr <span style="color:#ae81ff">0</span>,nop,wscale <span style="color:#ae81ff">9</span><span style="color:#f92672">]</span>, length <span style="color:#ae81ff">0</span>
+<span style="color:#ae81ff">21</span>:11:45.059240 IP <span style="color:#ae81ff">10</span>.0.0.50.8080 &gt; <span style="color:#ae81ff">10</span>.0.0.3.37388: Flags <span style="color:#f92672">[</span>R.<span style="color:#f92672">]</span>, seq <span style="color:#ae81ff">0</span>, ack <span style="color:#ae81ff">3009015792</span>, win <span style="color:#ae81ff">0</span>, length <span style="color:#ae81ff">0</span>
+<span style="color:#ae81ff">21</span>:11:45.059248 IP <span style="color:#ae81ff">10</span>.0.0.50.8080 &gt; <span style="color:#ae81ff">10</span>.0.0.3.37388: Flags <span style="color:#f92672">[</span>S.<span style="color:#f92672">]</span>, seq <span style="color:#ae81ff">2629426318</span>, ack <span style="color:#ae81ff">3009015792</span>, win <span style="color:#ae81ff">28960</span>, options <span style="color:#f92672">[</span>mss <span style="color:#ae81ff">1460</span>,sackOK,TS val <span style="color:#ae81ff">4193378273</span> ecr <span style="color:#ae81ff">2263173829</span>,nop,wscale <span style="color:#ae81ff">9</span><span style="color:#f92672">]</span>, length <span style="color:#ae81ff">0</span></code></pre></div>
+<p>&hellip; What?</p>
+
+<p>At this point, I&rsquo;m baffled. Let&rsquo;s recap what&rsquo;s going on here. The server is seeing a SYN and SYN-ACK. However, the client is seeing a SYN, SYN-ACK, and RESET. How is it possible that the client could be sent both a SYN-ACK and a RESET from the same source??</p>
+
+<p>If you&rsquo;re interested in this stuff, I invite you to sit for a minute and think about why this might be happening. This is one of the more interesting bugs I&rsquo;ve run into in a while. The presence of a SYN-ACK and RESET concurrently really interested me.</p>
+
+<h3 id="the-bug-revealed">The Bug Revealed</h3>
+
+<p>Remember when I said that Caplance isn&rsquo;t binding to a specific port? That turns out to be the key to the puzzle here. <strong>Since Caplance listens for all TCP connections instead of a single port, it never sends a &ldquo;bind&rdquo; request to the OS. This means that the OS will still respond to all incoming TCP connections with a RESET.</strong></p>
+
+<p>To clarify, let&rsquo;s think about the connection establishment journey:</p>
+
+<ol>
+<li>SYN leaves the client</li>
+<li>SYN hits the load balancer
+
+<ol>
+<li>Because the load balancer isn&rsquo;t actually bound to a TCP port, the OS replies to the client with a RESET</li>
+<li>The load balancer forwards the SYN to the backend</li>
+</ol></li>
+<li>SYN hits the backend
+
+<ol>
+<li>Backend replies to the client with SYN-ACK</li>
+</ol></li>
+<li>Client receives RESET</li>
+<li>Client receives SYN-ACK</li>
+</ol>
+
+<p>As is typical, the actual bug is pretty simple in hindsight, but it can be hard to find in the moment.</p>
+
+<h2 id="enter-nfqueue">Enter NFQUEUE</h2>
+
+<p>So now we&rsquo;re in a conundrum: we want to stop the OS from seeing packets destined for the VIP, but we also want the OS to give packets destined to the VIP to our program so it can forward then to the appropriate backend. This is where NFQUEUE comes into play.</p>
+
+<p>NFQUEUE is a iptables filter rule that queues up incoming packets onto a queue, waiting to be processed by some program in userspace. Let&rsquo;s see an example rule.</p>
+
+<p>The following rules will drop all tcp and udp packets destined for the IP <code>10.0.0.50</code>:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ iptables -A INPUT -d <span style="color:#ae81ff">10</span>.0.0.50/32 -p tcp -j DROP
+$ iptables -A INPUT -d <span style="color:#ae81ff">10</span>.0.0.50/32 -p udp -j DROP</code></pre></div>
+<p>What if instead, we want to put all tcp and udp destined for <code>10.0.0.50</code> onto a NFQUEUE with the id 0? We can simply modify our previous rule as follows:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ iptables -A INPUT -d <span style="color:#ae81ff">10</span>.0.0.50/32 -p tcp -j NFQUEUE --queue-num <span style="color:#ae81ff">0</span>
+$ iptables -A INPUT -d <span style="color:#ae81ff">10</span>.0.0.50/32 -p udp -j NFQUEUE --queue-num <span style="color:#ae81ff">0</span></code></pre></div>
+<p>Now, we have a single source (queue 0) that we can consume all our packets off of! There are bindings to do this in many languages, but I&rsquo;m using Go for Caplance, so here&rsquo;s a snippet of how this looks in Go.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#a6e22e">b</span>.<span style="color:#a6e22e">nfq</span>, <span style="color:#a6e22e">err</span> = <span style="color:#a6e22e">netfilter</span>.<span style="color:#a6e22e">NewNFQueue</span>(<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">100</span>, <span style="color:#a6e22e">netfilter</span>.<span style="color:#a6e22e">NF_DEFAULT_PACKET_SIZE</span>)
+<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+    <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Panicln</span>(<span style="color:#a6e22e">err</span>)
+}
+<span style="color:#a6e22e">packetChan</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">b</span>.<span style="color:#a6e22e">nfq</span>.<span style="color:#a6e22e">GetPackets</span>()
+<span style="color:#a6e22e">stopped</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">false</span>
+<span style="color:#66d9ef">for</span> !<span style="color:#a6e22e">stopped</span> {
+    <span style="color:#66d9ef">select</span> {
+    <span style="color:#66d9ef">case</span> <span style="color:#a6e22e">packet</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&lt;-</span><span style="color:#a6e22e">packetChan</span>:
+        <span style="color:#a6e22e">b</span>.<span style="color:#a6e22e">packets</span> <span style="color:#f92672">&lt;-</span> <span style="color:#a6e22e">packet</span>.<span style="color:#a6e22e">Packet</span>.<span style="color:#a6e22e">Data</span>()
+        <span style="color:#a6e22e">packet</span>.<span style="color:#a6e22e">SetVerdict</span>(<span style="color:#a6e22e">netfilter</span>.<span style="color:#a6e22e">NF_DROP</span>)
+    <span style="color:#66d9ef">case</span> <span style="color:#a6e22e">sig</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&lt;-</span><span style="color:#a6e22e">b</span>.<span style="color:#a6e22e">stopChan</span>:
+        <span style="color:#a6e22e">b</span>.<span style="color:#a6e22e">stopChan</span> <span style="color:#f92672">&lt;-</span> <span style="color:#a6e22e">sig</span>
+        <span style="color:#a6e22e">stopped</span> = <span style="color:#66d9ef">true</span>
+    }
+}</code></pre></div>
+<p>Don&rsquo;t worry if you don&rsquo;t understand the Go specifics of this code. The important thing is that we&rsquo;re creating a NFQUEUE receiver called <code>b.nfq</code>. Then, we create a channel called <code>packetChan</code> off of which we can consume whatever packets come in to queue 0.</p>
+
+<h3 id="running-it">Running It</h3>
+
+<p>Let&rsquo;s make sure this works! If it does, we should see whatever we type into h3 popping up in the TCP server on h2.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">h3 $ telnet <span style="color:#ae81ff">10</span>.0.0.50 <span style="color:#ae81ff">8080</span>
+Trying <span style="color:#ae81ff">10</span>.0.0.50...
+Connected to <span style="color:#ae81ff">10</span>.0.0.50.
+Escape character is <span style="color:#e6db74">&#39;^]&#39;</span>.
+Is this working?
+It is!!!!!
+ ^<span style="color:#f92672">]</span>
+telnet&gt; close
+Connection closed.
+
+h2 $ nc -l <span style="color:#ae81ff">10</span>.0.0.50 <span style="color:#ae81ff">8080</span>
+Is this working?
+It is!!!!</code></pre></div>
+<p>We did it! NFQUEUE was the answer to our problems.</p>
+
+<h2 id="conclusion">Conclusion</h2>
+
+<p>When I found out about NFQUEUE, I was dumbstruck. It solved so many of my problems - creating a single source from which I could consume packets, stopping the load balancer from replying to the wrong packets, and overall just cleaning up my code. If you&rsquo;ve got a project like this, I highly recommend looking at NFQUEUE as a potential option.</p>
+]]></content>
+        </item>
+        
+        <item>
+            <title>My Neovim Go Setup</title>
+            <link>https://pawalt.github.io/posts/2019/06/my-neovim-go-setup/</link>
+            <pubDate>Sat, 01 Jun 2019 00:00:00 +0000</pubDate>
+            
+            <guid>https://pawalt.github.io/posts/2019/06/my-neovim-go-setup/</guid>
+            <description>Recently, I moved from writing my Go in VSCode to writing it in Neovim. I did this for two main reasons:
  Ubiquity
 I use Neovim for writing pretty much all my other code (except Java), so it was weird to use VSCode for this one purpose.
  Terminal Integration
 I hate the VS Code terminal. It doesn&amp;rsquo;t have the character support I want, and it overrides a bunch of keys (for example, Ctrl+f for fish autocomplete).</description>
-    </item>
-    
-    <item>
-      <title>Caplance Development Update 1</title>
-      <link>https://pawalt.github.io/posts/2019/05/caplance-development-update-1/</link>
-      <pubDate>Sat, 25 May 2019 00:00:00 +0000</pubDate>
-      
-      <guid>https://pawalt.github.io/posts/2019/05/caplance-development-update-1/</guid>
-      <description>After countless hours spent reading the GoDocs, googling &amp;ldquo;gre packets golang&amp;rdquo;, and staring at the term SIGSEV, I&amp;rsquo;ve got an update! I&amp;rsquo;ve made pretty significant progress on the actual load balancer, implementing most of the base functionality. So far, the load balancer can:
+            <content type="html"><![CDATA[
+
+<p>Recently, I moved from writing my Go in VSCode to writing it in Neovim. I did this for two main reasons:</p>
+
+<ol>
+<li><p>Ubiquity</p>
+
+<p>I use Neovim for writing pretty much all my other code (except Java), so it was weird to use VSCode for this one purpose.</p></li>
+
+<li><p>Terminal Integration</p>
+
+<p>I <em>hate</em> the VS Code terminal. It doesn&rsquo;t have the character support I want, and it overrides a bunch of keys (for example, Ctrl+f for fish autocomplete). I&rsquo;m also in the terminal already when I&rsquo;m doing Go development, so being able to just type <code>vim</code> and instantly be in my editor is a blessing.</p></li>
+</ol>
+
+<p>Before I start, it&rsquo;s important to note that I&rsquo;m currently doing all this on Ubuntu 18.04 with Go 1.12, provided via the <code>longsleep/golang-backports</code> ppa. For more info on how to install Go, <a href="https://github.com/golang/go/wiki/Ubuntu">visit the wiki</a></p>
+
+<h2 id="basics">Basics</h2>
+
+<p>The first bit of configuration is my Go tab settings. These are standard for Go, and even if you don&rsquo;t set them, <code>gofmt</code> will enforce them anyway.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-vim" data-lang="vim"><span style="color:#a6e22e">au</span> <span style="color:#a6e22e">FileType</span> <span style="color:#a6e22e">go</span> <span style="color:#a6e22e">set</span> <span style="color:#a6e22e">noexpandtab</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#a6e22e">au</span> <span style="color:#a6e22e">FileType</span> <span style="color:#a6e22e">go</span> <span style="color:#a6e22e">set</span> <span style="color:#a6e22e">shiftwidth</span>=<span style="color:#ae81ff">4</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#a6e22e">au</span> <span style="color:#a6e22e">FileType</span> <span style="color:#a6e22e">go</span> <span style="color:#a6e22e">set</span> <span style="color:#a6e22e">softtabstop</span>=<span style="color:#ae81ff">4</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#a6e22e">au</span> <span style="color:#a6e22e">FileType</span> <span style="color:#a6e22e">go</span> <span style="color:#a6e22e">set</span> <span style="color:#a6e22e">tabstop</span>=<span style="color:#ae81ff">4</span></code></pre></div>
+<p>I&rsquo;m using <a href="https://github.com/VundleVim/Vundle.vim">Vundle</a> for my package management. Frankly, I should be using vim-plug, but I haven&rsquo;t taken the 5 minutes to move over. Vundle does the job just fine.</p>
+
+<p>The first important package to have is <a href="https://github.com/fatih/vim-go">vim-go</a>. This plugin is absolutely fantastic, providing pretty much all the base go features you need. In my configuration for this plugin, I turn on syntax highlighting for basically everything. I also like <code>goimports</code> over <code>gofmt</code> because it sorts my imports, so I use that as the default formatter. Finally, I turn on highlighting of the variable my cursor is on, and I enable type hints in airline.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-vim" data-lang="vim"><span style="color:#75715e">&#34; use goimports not gofmt to format</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">let</span> <span style="color:#a6e22e">g</span>:<span style="color:#a6e22e">go_fmt_command</span> = <span style="color:#e6db74">&#34;goimports&#34;</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#75715e">&#34; syntax highlight all the things</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">let</span> <span style="color:#a6e22e">g</span>:<span style="color:#a6e22e">go_highlight_build_constraints</span> = <span style="color:#ae81ff">1</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">let</span> <span style="color:#a6e22e">g</span>:<span style="color:#a6e22e">go_highlight_extra_types</span> = <span style="color:#ae81ff">1</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">let</span> <span style="color:#a6e22e">g</span>:<span style="color:#a6e22e">go_highlight_fields</span> = <span style="color:#ae81ff">1</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">let</span> <span style="color:#a6e22e">g</span>:<span style="color:#a6e22e">go_highlight_functions</span> = <span style="color:#ae81ff">1</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">let</span> <span style="color:#a6e22e">g</span>:<span style="color:#a6e22e">go_highlight_methods</span> = <span style="color:#ae81ff">1</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">let</span> <span style="color:#a6e22e">g</span>:<span style="color:#a6e22e">go_highlight_operators</span> = <span style="color:#ae81ff">1</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">let</span> <span style="color:#a6e22e">g</span>:<span style="color:#a6e22e">go_highlight_structs</span> = <span style="color:#ae81ff">1</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">let</span> <span style="color:#a6e22e">g</span>:<span style="color:#a6e22e">go_highlight_types</span> = <span style="color:#ae81ff">1</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#75715e">&#34; highlight variables across file</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">let</span> <span style="color:#a6e22e">g</span>:<span style="color:#a6e22e">go_auto_sameids</span> = <span style="color:#ae81ff">1</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#75715e">&#34; vim-go get type info in airline</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">let</span> <span style="color:#a6e22e">g</span>:<span style="color:#a6e22e">go_auto_type_info</span> = <span style="color:#ae81ff">1</span></code></pre></div>
+<p>Once this is all set, and the plugin is installed, run <code>:GoInstallBinaries</code> to get the latest version of all required Go binaries.</p>
+
+<h2 id="file-explorer">File Explorer</h2>
+
+<p>One of the main reasons I switched from Neovim to VS Code for Go development in the first place was the presence of a persistent file browser. I had used NERDTree before, but the fact that it didn&rsquo;t persist through tabs made pretty useless for me. However, recently, I found out about <code>:NERDTreeMirror</code>, and it took NERDTree from a nice idea to a killer plugin for me.</p>
+
+<p><code>:NERDTreeMirror</code> does exactly what it sounds like. It starts the NERDTree file browser in the current tab, mirroring the state of the other already-open trees. This allows NERDTree to effectively act like a persistent file browser. The only problem is that this command isn&rsquo;t automatically invoked when a new tab is opened, breaking the illusion of a persistent file browser. To fix this, I wrote my own new tab function that checks if NERDTree is already open, and if it is, <code>:NERDTreeMirror</code> is called after the new tab is created. I map this to <code>&lt;leader&gt;t</code>, which in my case, is <code>\t</code>.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-vim" data-lang="vim"><span style="color:#66d9ef">function</span>! <span style="color:#a6e22e">IsNerdTreeEnabled</span>()<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span>  <span style="color:#a6e22e">return</span> <span style="color:#a6e22e">exists</span>(<span style="color:#e6db74">&#39;t:NERDTreeBufName&#39;</span>) &amp;&amp; <span style="color:#a6e22e">bufwinnr</span>(<span style="color:#a6e22e">t</span>:<span style="color:#a6e22e">NERDTreeBufName</span>) != <span style="color:#ae81ff">-1</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">endfunction</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">function</span>! <span style="color:#a6e22e">TreeTab</span>()<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span>  <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">IsNerdTreeEnabled</span>()<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span>    <span style="color:#a6e22e">execute</span> <span style="color:#e6db74">&#39;tabe&#39;</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span>    <span style="color:#a6e22e">execute</span> <span style="color:#e6db74">&#39;NERDTreeMirror&#39;</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span>  <span style="color:#66d9ef">else</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span>    <span style="color:#a6e22e">execute</span> <span style="color:#e6db74">&#39;tabe&#39;</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span>  <span style="color:#66d9ef">endif</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#a6e22e">endfu</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#a6e22e">nnoremap</span> &lt;<span style="color:#a6e22e">leader</span>&gt;<span style="color:#a6e22e">t</span> :<span style="color:#a6e22e">call</span> <span style="color:#a6e22e">TreeTab</span>()&lt;<span style="color:#a6e22e">CR</span>&gt;</code></pre></div>
+<p>My other config settings, in order</p>
+
+<ol>
+<li>Automatically open NERDTree if no arguments are passed into <code>vim</code></li>
+<li>Open NERDTree to the current file when <code>\v</code> is typed</li>
+
+<li><p>Close NERDTree if it is the only window left</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-vim" data-lang="vim"><span style="color:#75715e">&#34; auto-open if no args are set</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#a6e22e">autocmd</span> <span style="color:#a6e22e">VimEnter</span> * <span style="color:#66d9ef">if</span> !<span style="color:#a6e22e">argc</span>() | <span style="color:#a6e22e">NERDTree</span> | <span style="color:#66d9ef">endif</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#75715e">&#34; open on \v</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#a6e22e">nnoremap</span> &lt;<span style="color:#a6e22e">silent</span>&gt; &lt;<span style="color:#a6e22e">Leader</span>&gt;<span style="color:#a6e22e">v</span> :<span style="color:#a6e22e">NERDTreeFind</span>&lt;<span style="color:#a6e22e">CR</span>&gt;<span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#75715e">&#34; close if only window left</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#a6e22e">autocmd</span> <span style="color:#a6e22e">bufenter</span> * <span style="color:#66d9ef">if</span> (<span style="color:#a6e22e">winnr</span>(<span style="color:#e6db74">&#34;$&#34;</span>) == <span style="color:#ae81ff">1</span> &amp;&amp; <span style="color:#a6e22e">exists</span>(<span style="color:#e6db74">&#34;b:NERDTree&#34;</span>) &amp;&amp; <span style="color:#a6e22e">b</span>:<span style="color:#a6e22e">NERDTree</span>.<span style="color:#a6e22e">isTabTree</span>()) | <span style="color:#a6e22e">q</span> | <span style="color:#66d9ef">endif</span></code></pre></div></li>
+</ol>
+
+<h2 id="linting">Linting</h2>
+
+<p>I use <a href="https://github.com/w0rp/ale">Ale</a> for linting. It&rsquo;s very fast, and most importantly, it&rsquo;s dumb easy to set up. I&rsquo;ve struggled for hours with Neomake only to get it half-working, but Ale worked out of the box. Just make sure you have <a href="https://github.com/golang/lint">golint</a> installed, and you&rsquo;re good to go.</p>
+
+<p>I also manually configure the error and warning characters and disable the location list for errors. It&rsquo;s more annoying for me than it is helpful.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-vim" data-lang="vim"><span style="color:#75715e">&#34; Error and warning signs.</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">let</span> <span style="color:#a6e22e">g</span>:<span style="color:#a6e22e">ale_sign_error</span> = <span style="color:#e6db74">&#39;⤫&#39;</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">let</span> <span style="color:#a6e22e">g</span>:<span style="color:#a6e22e">ale_sign_warning</span> = <span style="color:#e6db74">&#39;⚠&#39;</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">let</span> <span style="color:#a6e22e">g</span>:<span style="color:#a6e22e">ale_set_loclist</span> = <span style="color:#ae81ff">0</span></code></pre></div>
+<h2 id="autocomplete">Autocomplete</h2>
+
+<p>Autocomplete is notoriously hard to set up in Vim/Neovim, and unfortunately, I don&rsquo;t have silver bullet to fix that. I&rsquo;m using <a href="https://github.com/Shougo/deoplete.nvim">deoplete</a> and <a href="https://github.com/deoplete-plugins/deoplete-go">deoplete-go</a> for better Go support. To use the latter, make sure you have <a href="https://github.com/mdempsky/gocode">gocode</a> installed. I&rsquo;m still having some problems with errors on startup, but the solution is very good once <code>gocode</code> has a chance to start up.</p>
+
+<p>My config options, in order</p>
+
+<ol>
+<li>start deoplete at startup</li>
+<li>allow me to cycle through autocomplete options with the tab key</li>
+
+<li><p>set a order of preference for go autocomplete suggestions</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-vim" data-lang="vim"><span style="color:#75715e">&#34; deoplete settings</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">let</span> <span style="color:#a6e22e">g</span>:<span style="color:#a6e22e">deoplete</span>#<span style="color:#a6e22e">enable_at_startup</span> = <span style="color:#ae81ff">1</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#a6e22e">inoremap</span> &lt;<span style="color:#a6e22e">expr</span>&gt;&lt;<span style="color:#a6e22e">TAB</span>&gt;  <span style="color:#a6e22e">pumvisible</span>() ? <span style="color:#e6db74">&#34;\&lt;C-n&gt;&#34;</span> : <span style="color:#e6db74">&#34;\&lt;TAB&gt;&#34;</span><span style="color:#960050;background-color:#1e0010">
+</span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#66d9ef">let</span> <span style="color:#a6e22e">g</span>:<span style="color:#a6e22e">deoplete</span>#<span style="color:#a6e22e">sources</span>#<span style="color:#a6e22e">go</span>#<span style="color:#a6e22e">sort_class</span> = [<span style="color:#e6db74">&#39;package&#39;</span>, <span style="color:#e6db74">&#39;func&#39;</span>, <span style="color:#e6db74">&#39;type&#39;</span>, <span style="color:#e6db74">&#39;var&#39;</span>, <span style="color:#e6db74">&#39;const&#39;</span>]</code></pre></div></li>
+</ol>
+
+<p>A few tips for setup:</p>
+
+<ul>
+<li><p>Make sure the python and python3 Neovim providers are installed. They can be installed with the following commands:</p>
+
+<pre><code>$ pip install neovim
+$ pip3 install neovim
+</code></pre></li>
+
+<li><p>Make sure all necessary Go binaries are installed. Ensure this with the <code>:GoInstallBinaries</code> command in Neovim.</p></li>
+
+<li><p>Add a make instruction in Vundle for <code>deoplete-go</code> so that it gets made properly.</p>
+
+<pre><code>Plugin 'zchee/deoplete-go', { 'do': 'make'}
+</code></pre></li>
+</ul>
+
+<h2 id="misc">Misc</h2>
+
+<p>Some other plugins I use are:</p>
+
+<ul>
+<li><a href="https://github.com/jiangmiao/auto-pairs">auto-pairs</a> for automatically closing parentheses and brackets</li>
+<li><a href="https://github.com/vim-airline/vim-airline">vim-airline</a> for a fantastic statusline</li>
+<li><a href="https://github.com/ryanoasis/vim-devicons">vim-devicons</a> to add type icons to NERDTree</li>
+<li><a href="https://github.com/ctrlpvim/ctrlp.vim">ctrlp.vim</a> for fast fuzzy search</li>
+</ul>
+
+<h2 id="conclusion">Conclusion</h2>
+
+<p>With these plugins, I can now use Neovim without losing any of the functionality I got in VS Code! If you&rsquo;re interested, <a href="https://github.com/Pwpon500/user-sync/blob/master/vimrc">here&rsquo;s my vimrc</a>. Happy coding!</p>
+]]></content>
+        </item>
+        
+        <item>
+            <title>Caplance Development Update 1</title>
+            <link>https://pawalt.github.io/posts/2019/05/caplance-development-update-1/</link>
+            <pubDate>Sat, 25 May 2019 00:00:00 +0000</pubDate>
+            
+            <guid>https://pawalt.github.io/posts/2019/05/caplance-development-update-1/</guid>
+            <description>After countless hours spent reading the GoDocs, googling &amp;ldquo;gre packets golang&amp;rdquo;, and staring at the term SIGSEV, I&amp;rsquo;ve got an update! I&amp;rsquo;ve made pretty significant progress on the actual load balancer, implementing most of the base functionality. So far, the load balancer can:
  listen for and ingest whole IP packets select the backend for a packet based on a combination of IP and source port encapsulate packets in UDP and send them to the appropriate backend attach a specified virtual IP  I&amp;rsquo;ve also implemented some extremely rudimentary testing and setup, but I&amp;rsquo;m going to rework those once the project structure solidifies some more.</description>
-    </item>
-    
-    <item>
-      <title>Constant Improvement - A Reflection</title>
-      <link>https://pawalt.github.io/posts/2019/05/constant-improvement-a-reflection/</link>
-      <pubDate>Tue, 21 May 2019 00:00:00 +0000</pubDate>
-      
-      <guid>https://pawalt.github.io/posts/2019/05/constant-improvement-a-reflection/</guid>
-      <description>From Sunday, 3/10/19 to today, Tuesday 5/21/19, I&amp;rsquo;ve been working on improving. During that time, I decided on a single, small improvement to make each week, and I tried to execute on it. Each week, I&amp;rsquo;d outline the motivation behind my decision, the tools I&amp;rsquo;d be using, and the rules I&amp;rsquo;d have to follow during the week. The next week, I&amp;rsquo;d write a short reflection on how I thought the week went with respect to my adherence to the rules I set.</description>
-    </item>
-    
-    <item>
-      <title>Mininet for Education</title>
-      <link>https://pawalt.github.io/posts/2019/04/mininet-for-education/</link>
-      <pubDate>Mon, 29 Apr 2019 00:00:00 +0000</pubDate>
-      
-      <guid>https://pawalt.github.io/posts/2019/04/mininet-for-education/</guid>
-      <description>For about 2 years, I built and led the NEAT Rack Project, a program meant to teach high school and college aged students network engineering. In this program, we covered things as basic as introduction to Linux and as advanced as firewalling or dynamic routing with BGP. This program was well-run, well-written, and it overall did a solid job of giving students an introduction to technology infrastructure. There was just one problem with it - hardware.</description>
-    </item>
-    
-    <item>
-      <title>Maglev - A Next-Generation Load Balancer</title>
-      <link>https://pawalt.github.io/posts/2019/04/maglev-a-next-generation-load-balancer/</link>
-      <pubDate>Sat, 20 Apr 2019 00:00:00 +0000</pubDate>
-      
-      <guid>https://pawalt.github.io/posts/2019/04/maglev-a-next-generation-load-balancer/</guid>
-      <description>When reading Google&amp;rsquo;s SRE book, I came across the section on load balancing. The book breaks up load balancing into three levels:
+            <content type="html"><![CDATA[
+
+<p>After countless hours spent reading the GoDocs, googling &ldquo;gre packets golang&rdquo;, and staring at the term SIGSEV, I&rsquo;ve got an update! I&rsquo;ve made pretty significant progress on the actual load balancer, implementing most of the base functionality. So far, the load balancer can:</p>
+
+<ul>
+<li>listen for and ingest whole IP packets</li>
+<li>select the backend for a packet based on a combination of IP and source port</li>
+<li>encapsulate packets in UDP and send them to the appropriate backend</li>
+<li>attach a specified virtual IP</li>
+</ul>
+
+<p>I&rsquo;ve also implemented some extremely rudimentary testing and setup, but I&rsquo;m going to rework those once the project structure solidifies some more.</p>
+
+<p>Here&rsquo;s some detail on the more interesting technical parts of the project so far:</p>
+
+<h2 id="listening">Listening</h2>
+
+<p>I initially listened for packets with a go interface for pcap, a packet capture protocol that allows the user to select an interface and &ldquo;sniff&rdquo; its packets. If you&rsquo;ve used tcpdump, you&rsquo;ve used pcap. With pcap, I could tap into the interface that the virtual IP was using and filter for only the packets destined for the VIP. Then, I could read the packets right off the interface. There were two problems with this approach:</p>
+
+<ol>
+<li>I wasn&rsquo;t actually doing listening in a conventional way. If you pull up <code>ss -4l</code>, you wouldn&rsquo;t see any entry for Caplance (because I&rsquo;m not technically listening. I&rsquo;m creating a TAP device). That&rsquo;s a pretty big problem just because I want Caplance to work well with conventional Unix tools.</li>
+<li>Closing a pcap device from go is stupid slow. In my tests, closing the device took upwards of 30 seconds, and the device needs to be closed before Caplance can terminate. This is unacceptable, and it was ultimately what did in the pcap approach for me.</li>
+</ol>
+
+<p>Enter <a href="https://golang.org/pkg/net/#IPConn">IPConn</a>. IPConn is a listener for go that listens at the IP level. That means, when you do a read off of it, it reads in from the IP layer down, exactly what I want. Since it&rsquo;s a built-in go listener, it also closes extremely quickly. Whereas before I needed to set up a filter, find the appropriate device, etc., with IPConn, my listening can be reduced to this simple function:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">b</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Balancer</span>) <span style="color:#a6e22e">listenWithConn</span>(<span style="color:#a6e22e">conn</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">net</span>.<span style="color:#a6e22e">IPConn</span>, <span style="color:#a6e22e">pool</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">sync</span>.<span style="color:#a6e22e">Pool</span>) {
+	<span style="color:#66d9ef">for</span> {
+		<span style="color:#a6e22e">buf</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">pool</span>.<span style="color:#a6e22e">Get</span>().([]<span style="color:#66d9ef">byte</span>)
+		<span style="color:#a6e22e">n</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">conn</span>.<span style="color:#a6e22e">Read</span>(<span style="color:#a6e22e">buf</span>)
+		<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+			<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Println</span>(<span style="color:#e6db74">&#34;could not read from connection&#34;</span>)
+			<span style="color:#66d9ef">continue</span>
+		}
+		<span style="color:#a6e22e">toSend</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">rawPacket</span>{<span style="color:#a6e22e">buf</span>, <span style="color:#a6e22e">n</span>}
+		<span style="color:#a6e22e">b</span>.<span style="color:#a6e22e">packets</span> <span style="color:#f92672">&lt;-</span> <span style="color:#a6e22e">toSend</span>
+	}
+}</code></pre></div>
+<p>To provide a bit of context around this function, <code>pool</code> is a pool of buffers that the IPConn can use to store data from reads. <code>b.packets</code> is a channel (concurrency-safe queue) of packet for the worker goroutines to read packets off of.</p>
+
+<h2 id="packet-forwarding">Packet Forwarding</h2>
+
+<p>While I would to use normal routing rules to route incoming packets over GRE tunnels to backends, that won&rsquo;t work here. If we were always forwarding the same IP range of packets to the same backends, we could use iptables, but for this project, we want to use consistent hashing. Because of this, we have to write listening (as seen above) and packet forwarding ourselves.</p>
+
+<p>First, it&rsquo;s important to note that there&rsquo;s no good GRE library for go right now. The only real way to create a GRE tunnel in go is to make calls to the kernel to tell it to construct one. There&rsquo;s no way to have a GRE object, for instance, that you can just write data to in the same way you do with a TCP connection. I may take this up as a future project.</p>
+
+<p>Because of the lack of a library, I would have to write data directly to the wire. My initial idea was to (again) use pcap. My algorithm was as follows:</p>
+
+<ol>
+<li>Create GRE tunnel to backend (with netlink)</li>
+<li>Manually create GRE header for backend</li>
+<li>For each packet destined for the backend:
+
+<ol>
+<li>Create appropriate GRE header for the packet</li>
+<li>Marshal GRE header into a <code>[]byte</code></li>
+<li>Append the packet onto the marshalled header</li>
+<li>Perform some crazy pcap magic to figure out mac addresses of the next hop on the way to the backend</li>
+<li>Write the encapsulated packet to the right physical interface</li>
+</ol></li>
+</ol>
+
+<p>Ya know, now that I type it all out, that was an awful plan.</p>
+
+<p>After a lot of frustration and reflection, I asked myself the pivotal question, &ldquo;Why am I so set on GRE in the first place?&rdquo; The only reason I could come up with was that Google used it, and that&rsquo;s a pretty bad reason. Thinking about it more, I realized I could just use a UDP connection in place of GRE and achieve the same results I wanted.</p>
+
+<p>Now, my algorithm is as follows:</p>
+
+<ol>
+<li>Dial a UDP connection to each backend</li>
+<li>Write each packet to the appropriate backend with the built-in <code>Write(data []byte)</code> method</li>
+</ol>
+
+<p>That&rsquo;s a wee bit simpler. It&rsquo;s not as easy to show in a single piece of code as listening, but it wasn&rsquo;t too hard to write.</p>
+
+<h2 id="graceful-stop">Graceful Stop</h2>
+
+<p>I implemented graceful stop, which turned out to be way harder than I expected. I&rsquo;m anticipating writing about it in the future, though, so I&rsquo;m not going to include details on how it works right now. It&rsquo;s also very likely that I&rsquo;ll change how it&rsquo;s implemented. If you want to see the current iteration of it right now, <a href="https://github.com/Pwpon500/caplance/blob/4887f8c6230fbe062660c300df0a81f02450f064/balancer/control.go#L80">you can find the code here</a>.</p>
+
+<h1 id="future-work">Future Work</h1>
+
+<p>Obviously, I&rsquo;m not done yet. I still need to implement the following:</p>
+
+<ul>
+<li>Configuration file</li>
+<li>Environment variable configuration</li>
+<li>Client registration</li>
+<li>Client health checks</li>
+<li>Client packet injestion</li>
+<li>Optimization</li>
+<li>More that I don&rsquo;t even know exists yet</li>
+</ul>
+
+<p>I&rsquo;m crazy excited to get started on all those items, and I can&rsquo;t wait to write about them once I figure them out.</p>
+]]></content>
+        </item>
+        
+        <item>
+            <title>Constant Improvement - A Reflection</title>
+            <link>https://pawalt.github.io/posts/2019/05/constant-improvement-a-reflection/</link>
+            <pubDate>Tue, 21 May 2019 00:00:00 +0000</pubDate>
+            
+            <guid>https://pawalt.github.io/posts/2019/05/constant-improvement-a-reflection/</guid>
+            <description>From Sunday, 3/10/19 to today, Tuesday 5/21/19, I&amp;rsquo;ve been working on improving. During that time, I decided on a single, small improvement to make each week, and I tried to execute on it. Each week, I&amp;rsquo;d outline the motivation behind my decision, the tools I&amp;rsquo;d be using, and the rules I&amp;rsquo;d have to follow during the week. The next week, I&amp;rsquo;d write a short reflection on how I thought the week went with respect to my adherence to the rules I set.</description>
+            <content type="html"><![CDATA[
+
+<p>From Sunday, 3/10/19 to today, Tuesday 5/21/19, <a href="https://github.com/Pwpon500/improvement">I&rsquo;ve been working on improving</a>. During that time, I decided on a single, small improvement to make each week, and I tried to execute on it. Each week, I&rsquo;d outline the motivation behind my decision, the tools I&rsquo;d be using, and the rules I&rsquo;d have to follow during the week. The next week, I&rsquo;d write a short reflection on how I thought the week went with respect to my adherence to the rules I set.</p>
+
+<p>During this time, I learned a significant amount about myself and the process of improvement, so I thought I&rsquo;d share a bit about what I&rsquo;ve learned and some of my personal opinions on the topic. While reading, keep in mind that what I&rsquo;m saying is based purely off my own experience and is likely not applicable to all who read this.</p>
+
+<h1 id="making-improvements-small">Making improvements small</h1>
+
+<p>I&rsquo;ve made the mistake of trying to make large improvements many times. The danger with this is that you set expectations that you will almost certainly not be able to meet. The subsequent dropping of some of the expectations just weakens the others, and eventually, the whole system falls apart. The hard part is that the desire to make huge improvements often comes from the best place in the heart! Wanting to improve is an admirable thing, and wanting to radically improve yourself is even more admirable. Unfortunately, for the vast majority of people, I just don&rsquo;t think quick radical improvement is feasible.</p>
+
+<p>Obviously, the solution here is to make your improvements small. For me, the easiest way to make my improvements small is to first make the rules for my improvement unambiguously specific. After the rules have been fully specified, I can easily see if what I&rsquo;m doing is too much or not. I work on those rules for a week, and afterward, I reflect on whether or not they were too strenuous. Typically, I can tell that they were too strenuous simply if I was able to stick ot them or not.</p>
+
+<h1 id="allowing-rules-to-change">Allowing rules to change</h1>
+
+<p>You&rsquo;re never going to get your rules right the first time. In fact, they shouldn&rsquo;t! That&rsquo;s why you try out the rules in 1-week increments in the first place. The important thing is to track what rules are useful, which aren&rsquo;t, and what rules you add/change throughout the week.</p>
+
+<p>For example, in my week 1, I decided to track my time with an app called Clockify. The only problem is that Clockify didn&rsquo;t help me at all. Timing myself on tasks made near no difference. However, halfway through the week, I found an app called Forest that was hugely helpful for me. It not only timed me but also locked me out of my phone, which ended up being the kick I needed. I noted that I was using Forest instead of Clockify in my reflection, and the change was done.</p>
+
+<p>I should note, however, that allowing rules to change doesn&rsquo;t permit just dropping rules. If you just start dropping rules, it cheapens the values of the rest, and eventually, you&rsquo;ll give up on those. If you are getting rid of a rule or changing a rule, it&rsquo;s imperative that you have a good reason for doing so and that you record the change.</p>
+
+<h1 id="the-eventual-end-of-it-all">The eventual end of it all</h1>
+
+<p>At the end of the day, making an improvement a week, no matter how small, piles up (that&rsquo;s the idea). For me, after about 7 weeks of the project, I was done. The project had given me a lot to think about, and it really helped me get on track at a time where my life was pretty disorderly.</p>
+
+<p>While I&rsquo;m done adding improvements for the time being, I&rsquo;m still using many of the improvements I made during the project! I&rsquo;m still:</p>
+
+<ul>
+<li>Tracking tasks in Todoist</li>
+<li>Focusing with Forest</li>
+<li>Exercising 5+ times/week</li>
+<li>Paying attention to my screen time and reading my reports</li>
+<li>Blogging (obviously)</li>
+<li>Budgeting with Mint</li>
+</ul>
+
+<p>I&rsquo;d really encourage anyone reading to try out a project like this. It&rsquo;s certainly helped me get myself on track in ways that I&rsquo;ve been attempting for years now. There&rsquo;s a link to my Github repo at the top, but I&rsquo;ll drop it again here:</p>
+
+<p><a href="https://github.com/Pwpon500/improvement">https://github.com/Pwpon500/improvement</a></p>
+]]></content>
+        </item>
+        
+        <item>
+            <title>Mininet for Education</title>
+            <link>https://pawalt.github.io/posts/2019/04/mininet-for-education/</link>
+            <pubDate>Mon, 29 Apr 2019 00:00:00 +0000</pubDate>
+            
+            <guid>https://pawalt.github.io/posts/2019/04/mininet-for-education/</guid>
+            <description>For about 2 years, I built and led the NEAT Rack Project, a program meant to teach high school and college aged students network engineering. In this program, we covered things as basic as introduction to Linux and as advanced as firewalling or dynamic routing with BGP. This program was well-run, well-written, and it overall did a solid job of giving students an introduction to technology infrastructure. There was just one problem with it - hardware.</description>
+            <content type="html"><![CDATA[
+
+<p>For about 2 years, I built and led the <a href="http://rva-ix.net/the-neat-rack-program/">NEAT Rack Project</a>, a program meant to teach high school and college aged students network engineering. In this program, we covered things as basic as introduction to Linux and as advanced as firewalling or dynamic routing with BGP. This program was well-run, well-written, and it overall did a solid job of giving students an introduction to technology infrastructure. There was just one problem with it - hardware.</p>
+
+<p>This program requires that the students have access to a rack with a managed switch and at least one server capable of virtualization. First, these resources are often difficult for schools to procure. Then, even if the school can procure them, only a single student or group of students can work on the labs at a time. Furthermore, working on labs at home isn&rsquo;t even a possibility since you can&rsquo;t take a whole rack home.</p>
+
+<p>Mininet aims to solve these problems.</p>
+
+<h2 id="what-is-mininet">What is Mininet?</h2>
+
+<p>Mininet is a network simulation tool for Linux. The goal of it is to create a &ldquo;realistic virtual network&rdquo; with minimal overhead. Since it aims for minimal overhead, it shares both filesystem space and PID space with the host it operates on. Both of these can be avoided, however, with the private directories host option in Mininet.</p>
+
+<p>One cool thing about Mininet is how lightweight it is. Since it does basically no isolation other than creating some virtual kernels, it spins up and down in seconds, using minimal memory. This means it can run on a device as weak as a Raspberry Pi!</p>
+
+<h2 id="the-mininet-api">The Mininet API</h2>
+
+<p>Another amazing part of Mininet is its Python API. This API lets you programmatically create new networks, interact with them, and destroy them. Take the following simple example:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#75715e">#!/usr/bin/env python2</span>
+<span style="color:#e6db74">&#34;&#34;&#34; This script provides a basic switch topo.&#34;&#34;&#34;</span>
+
+<span style="color:#f92672">from</span> functools <span style="color:#f92672">import</span> partial
+<span style="color:#f92672">from</span> mininet.topo <span style="color:#f92672">import</span> SingleSwitchTopo
+<span style="color:#f92672">from</span> mininet.net <span style="color:#f92672">import</span> Mininet
+<span style="color:#f92672">from</span> mininet.cli <span style="color:#f92672">import</span> CLI
+<span style="color:#f92672">from</span> mininet.node <span style="color:#f92672">import</span> Host
+<span style="color:#f92672">from</span> mininet.log <span style="color:#f92672">import</span> setLogLevel
+
+
+<span style="color:#66d9ef">def</span> <span style="color:#a6e22e">simple_test</span>():
+    <span style="color:#e6db74">&#34;Create and test a simple network&#34;</span>
+    topo <span style="color:#f92672">=</span> SingleSwitchTopo(k<span style="color:#f92672">=</span><span style="color:#ae81ff">5</span>)
+    private_dirs <span style="color:#f92672">=</span> [<span style="color:#e6db74">&#39;/run&#39;</span>, (<span style="color:#e6db74">&#39;/var/run&#39;</span>, <span style="color:#e6db74">&#39;/tmp/</span><span style="color:#e6db74">%(name)s</span><span style="color:#e6db74">/var/run&#39;</span>), <span style="color:#e6db74">&#39;/var/mn&#39;</span>]
+    host <span style="color:#f92672">=</span> partial(Host, privateDirs<span style="color:#f92672">=</span>private_dirs)
+    net <span style="color:#f92672">=</span> Mininet(topo<span style="color:#f92672">=</span>topo, host<span style="color:#f92672">=</span>host)
+    net<span style="color:#f92672">.</span>start()
+    CLI(net)
+    net<span style="color:#f92672">.</span>stop()
+
+
+<span style="color:#66d9ef">if</span> __name__ <span style="color:#f92672">==</span> <span style="color:#e6db74">&#39;__main__&#39;</span>:
+    <span style="color:#75715e"># Tell mininet to print useful information</span>
+    setLogLevel(<span style="color:#e6db74">&#39;info&#39;</span>)
+    simple_test()</code></pre></div>
+<p>In these few lines of code, I have a file that will automatically create a network with 5 hosts on it where each host has PID separation. Now, instead of having to manually specify all these options, the user can just run &ldquo;sudo ./setup.py&rdquo;, and they&rsquo;re consoled in.</p>
+
+<p>The possibilities only begin here. Things get even crazier with <a href="http://mininet.org/walkthrough/#custom-topologies">custom topologies</a>.</p>
+
+<h2 id="teaching-example">Teaching Example</h2>
+
+<p>I could go on and on about Mininet, but the power of it becomes most evident when you actually see how it can be used. <a href="https://github.com/pwpon500/teaching">Here</a>, I&rsquo;m working on building up some labs based around Mininet for my friends to learn network engineering with. Feel free to try the labs and contribute your own!</p>
+]]></content>
+        </item>
+        
+        <item>
+            <title>Maglev - A Next-Generation Load Balancer</title>
+            <link>https://pawalt.github.io/posts/2019/04/maglev-a-next-generation-load-balancer/</link>
+            <pubDate>Sat, 20 Apr 2019 00:00:00 +0000</pubDate>
+            
+            <guid>https://pawalt.github.io/posts/2019/04/maglev-a-next-generation-load-balancer/</guid>
+            <description>When reading Google&amp;rsquo;s SRE book, I came across the section on load balancing. The book breaks up load balancing into three levels:
  DNS level Network level/Virtual IP level Datacenter level  While I was familiar with the Datacenter level (aka reverse proxy load balancing) and DNS load balancing (achieved partially through round robin DNS), I had never looked at network-level load balancing. After reading this section, I was fascinated with how their network-level load balancing works.</description>
-    </item>
-    
-    <item>
-      <title>On the Value of Formal Education</title>
-      <link>https://pawalt.github.io/posts/2019/04/on-the-value-of-formal-education/</link>
-      <pubDate>Sun, 14 Apr 2019 00:00:00 +0000</pubDate>
-      
-      <guid>https://pawalt.github.io/posts/2019/04/on-the-value-of-formal-education/</guid>
-      <description>Over the past few years, I&amp;rsquo;ve started to see a multitude of online videos/articles about the weakening value of college, particularly in the area of computer science. Whether it&amp;rsquo;s Devon Crawford talking about how he dropped out of school or Mashable writing an article trashing CS degrees, the popular view on the internet seems to be &amp;ldquo;Eh, just learn it on your own.&amp;rdquo; I&amp;rsquo;ve struggled with my opinion significantly on this topic, but overall, I think this view is deeply flawed.</description>
-    </item>
-    
-    <item>
-      <title>Hacking Farkle</title>
-      <link>https://pawalt.github.io/posts/2018/12/hacking-farkle/</link>
-      <pubDate>Sat, 29 Dec 2018 00:00:00 +0000</pubDate>
-      
-      <guid>https://pawalt.github.io/posts/2018/12/hacking-farkle/</guid>
-      <description>Recently, my family has been playing Farkle, a simple but difficult-to-analyze dice game. Farkle has the following rules:
+            <content type="html"><![CDATA[
+
+<p>When reading <a href="https://landing.google.com/sre/sre-book/toc/index.html">Google&rsquo;s SRE book</a>, I came across the section on load balancing. The book breaks up load balancing into three levels:</p>
+
+<ol>
+<li>DNS level</li>
+<li>Network level/Virtual IP level</li>
+<li>Datacenter level</li>
+</ol>
+
+<p>While I was familiar with the Datacenter level (aka reverse proxy load balancing) and DNS load balancing (achieved partially through round robin DNS), I had never looked at network-level load balancing. After reading this section, I was fascinated with how their network-level load balancing works.</p>
+
+<p>After some research online, I realized that the system they were referring to was their load balancer called Maglev. In 2016, Google released a paper detailing Maglev and how they built it. If you&rsquo;re interested in the nitty-gritty details, you can read the paper <a href="https://ai.google/research/pubs/pub44824">here</a>. It&rsquo;s a dense but fascinating read. I could spend a huge amount of time going into all the details of what makes Maglev interesting, but instead, I&rsquo;ll focus on two aspects: Maglev hashing and packet encapsulation.</p>
+
+<h2 id="introduction">Introduction</h2>
+
+<p>Before anything else, I&rsquo;ll describe the function of a network load balancer. The job of a network load balancer is to distribute packets destined for a &ldquo;virtual IP address&rdquo; to a set of backends evenly. Take the following picture as an example:</p>
+
+<p><img src="/img/maglev_1.png" alt="example maglev" /></p>
+
+<p>In this example, the job of Maglev is to deliver all of the packets coming in from the public internet evenly to backends 1-4.</p>
+
+<h2 id="maglev-hashing">Maglev Hashing</h2>
+
+<p>The first part of load balancing is actually deciding which backend to send an incoming packet to. In network load balancing, we are just looking at the IP layer, so we can&rsquo;t keep track of things like which backend has the most TCP connections open to it. Since we can&rsquo;t keep track of current state, we have to figure out how to distribute packets evenly just based on some attribute of the packet. Assume we pick out some attribute of each packet (this is usually a hashed combination of source IP and source port) and call id <code>id</code>. Then, we can treat <code>id</code> as an integer and evenly distribute packets to backends using the function <code>backend = id (mod n)</code> where <code>n</code> is our number of backends. Assuming an even distribution of IDs, this method will evenly distribute packets to backends, and it will keep sending packets from the same source to the same backend.</p>
+
+<p>So, is it that simple? It seems like we&rsquo;ve achieved what we want to - even distribution - with no downsides. Consider what happens when our <code>n</code> increases or decreases by even 1, however. In this case, since we don&rsquo;t know the range of our <code>id</code> hash function, which backend our packets go to could be completely changed for all connections. This would mean that all open client connections would be broken, which is certainly not desirable behavior. To see this in action, let&rsquo;s look at the example of where to send incoming packets with 5 backends versus with 4 backends.</p>
+
+<table>
+<thead>
+<tr>
+<th>id</th>
+<th>id (mod 4)</th>
+<th>id (mod 5)</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>717</td>
+<td>1</td>
+<td>2</td>
+</tr>
+
+<tr>
+<td>561</td>
+<td>1</td>
+<td>1</td>
+</tr>
+
+<tr>
+<td>544</td>
+<td>0</td>
+<td>4</td>
+</tr>
+
+<tr>
+<td>67</td>
+<td>3</td>
+<td>2</td>
+</tr>
+
+<tr>
+<td>310</td>
+<td>2</td>
+<td>0</td>
+</tr>
+
+<tr>
+<td>626</td>
+<td>2</td>
+<td>1</td>
+</tr>
+</tbody>
+</table>
+
+<p>As you can see, all the packet flows are disrupted except that for the packet with id 561. Since we will certainly be adding and removing backends live, this is unacceptable behavior. This is where <strong>consistent hashing</strong> comes to the rescue. Consistent hashing is very complicated, but the short of it is that it provides a way for minimal disruption when adding and removing backends. With consistent hashing, instead of all the packet flows being disrupted, at most <code>1/n</code> (where <code>n</code> is the number of the backends) of the packets flows are disrupted.</p>
+
+<p>There are many trade-offs with different kinds of consistent hashing that <a href="https://medium.com/@dgryski/consistent-hashing-algorithmic-tradeoffs-ef6b8e2fcae8">this article</a> explains better than I can, but in essence, there are three things you can optimize for in consistent hashing: memory usage, lookup speed, and hashtable rebuild speed. You can typically have 2 of these at once, but you can never have all 3 without making some other very significant tradeoff. Google&rsquo;s solution, called <strong>Maglev Hashing</strong>, optimizes for the first two. It assumes node failures are uncommon, and in making that assumption, it can get low memory usage with high lookup speed and minimal disruption when <em>new</em> backends are added but poor rebuild speed when a backend fails. This is a pretty reasonable assumption, and it turns out to work extremely well in the context of network load balancing.</p>
+
+<p>Now that we know how to pick backends, let&rsquo;s actually talk about how we send data to backends.</p>
+
+<h2 id="packet-encapsulation">Packet Encapsulation</h2>
+
+<p>First, let&rsquo;s consider the reverse proxy method of load balancing. In this method, connections are taken in by the load balancer. The balancer then initiates a new connection to the appropriate backend for the connection, and proxies the connections together, allowing the client to indirectly talk to a backend. This method looks like this:</p>
+
+<p><img src="/img/maglev_2.png" alt="reverse proxy design" /></p>
+
+<p>In this design, the load balancer has to do the following:</p>
+
+<ul>
+<li>Keep track of all active connections</li>
+<li>Proxy data between connections for all connections</li>
+<li>Pass both ingress and egress traffic for all the backends</li>
+</ul>
+
+<p>While this is acceptable (and even desired) for a datacenter load balancer, we can&rsquo;t pass packets at the scale a network load balancer needs to using this design. This is where <strong>packet encapsulation</strong> comes into play.</p>
+
+<p>The solution that Google found to this problem was to use the following algorithm:</p>
+
+<ol>
+<li>Maglev hash the packet to determine its backend</li>
+<li>Wrap the packet in a layer of GRE (generic routing encapsulation)</li>
+<li>Send the encapsulated packet to the desired backend</li>
+<li>Have the backend break the packet of the encapsulation and fully process it</li>
+<li>Have the backend directly reply to this packet.</li>
+</ol>
+
+<p>Did you catch that last step? Since we&rsquo;re using encapsulation, the backend is seeing the original packet as received by the load balancer, so it can directly reply to the packet. We can see this in action on an example packet flow:</p>
+
+<p><img src="/img/maglev_3.png" alt="gre design" /></p>
+
+<p>The fact that the backend can directly reply is a huge benefit of the encapsulation method. To see why, consider the use case of YouTube. When a user requests to see a video, the request payload is very small, only containing metadata about what video they want to watch. The reply, however, is gigantic since it&rsquo;s a full video of up to 8K quality! With this method, the load balancer only only has to worry about the request, meaning it can handle drastically more traffic than a reverse proxy can.</p>
+
+<p>Personally, I thought this was the most interesting part of Maglev. I had only ever thought to use GRE as a site-to-site VPN, but this gave me a whole new outlook on what it could do.</p>
+
+<h2 id="conclusion">Conclusion</h2>
+
+<p>Maglev brings a ton of interesting concepts to the table and combines them in a way we&rsquo;ve never really seen before. I could only cover two things here, but tech like ECMP and RPC also play a huge role in how Maglev works. If you&rsquo;re interested, I highly encourage reading the paper.</p>
+
+<p>Thanks for reading! Look below for a shameless plug.</p>
+
+<h2 id="shameless-plug">Shameless Plug</h2>
+
+<p>As I said, I found Google&rsquo;s ideas on network load balancers fascinating. In fact, I found it so interesting that I decided to implement it myself! If you&rsquo;re interested in seeing how some of these ideas are implemented, I&rsquo;m writing my own version of Maglev called Caplance <a href="https://github.com/pwpon500/caplance">here</a>. At the time of writing this, I&rsquo;m working on setting up automated testing with Mininet, and I&rsquo;ll probably write more in the coming weeks as I make more progress on the load balancer.</p>
+]]></content>
+        </item>
+        
+        <item>
+            <title>On the Value of Formal Education</title>
+            <link>https://pawalt.github.io/posts/2019/04/on-the-value-of-formal-education/</link>
+            <pubDate>Sun, 14 Apr 2019 00:00:00 +0000</pubDate>
+            
+            <guid>https://pawalt.github.io/posts/2019/04/on-the-value-of-formal-education/</guid>
+            <description>Over the past few years, I&amp;rsquo;ve started to see a multitude of online videos/articles about the weakening value of college, particularly in the area of computer science. Whether it&amp;rsquo;s Devon Crawford talking about how he dropped out of school or Mashable writing an article trashing CS degrees, the popular view on the internet seems to be &amp;ldquo;Eh, just learn it on your own.&amp;rdquo; I&amp;rsquo;ve struggled with my opinion significantly on this topic, but overall, I think this view is deeply flawed.</description>
+            <content type="html"><![CDATA[
+
+<p>Over the past few years, I&rsquo;ve started to see a multitude of online videos/articles about the weakening value of college, particularly in the area of computer science. Whether it&rsquo;s <a href="https://www.youtube.com/channel/UCDrekHmOnkptxq3gUU0IyfA">Devon Crawford</a> talking about how he dropped out of school or <a href="https://mashable.com/2014/12/16/warning-college-may-be-a-waste-of-your-time-and-money/#5MchVc1AFaqc">Mashable writing an article trashing CS degrees</a>, the popular view on the internet seems to be &ldquo;Eh, just learn it on your own.&rdquo; I&rsquo;ve struggled with my opinion significantly on this topic, but overall, I think this view is deeply flawed. First, though, I&rsquo;ll talk about where this view goes right.</p>
+
+<h2 id="who-needs-college-really">Who needs college really?</h2>
+
+<p>The argument against a CS degree typically takes two main points:</p>
+
+<ul>
+<li>You can learn CS on your own</li>
+<li>Any current technologies won&rsquo;t be taught in school anyway</li>
+</ul>
+
+<p>I think the first point is much less valid than people give it credit for. It&rsquo;s easy to learn <em>programming</em> on your own, but learning computer science on your own is far more challenging. While programming is perhaps the most critical part of computer science, being a good programmer is a drastically different thing from being a good software engineer. Concepts like proofs, time complexity, and complex algorithms are also crucial to fully developing as a software engineer, and these concepts are extremely challenging to learn on your own. I&rsquo;ll go more into this idea in the next section.</p>
+
+<p>This next point is actually where I think the aforementioned Devon Crawford gets it right. <strong>Colleges simply cannot stay current with state-of-the-art technologies.</strong> Take <a href="https://www.youtube.com/watch?v=SC7lLm6QAb8">Devon&rsquo;s example of Kubernetes</a>. Kubernetes is the state-of-the-art in container orchestration, and it has pretty much taken over the container orchestration space, at least in open source. Despite all of this, most universities don&rsquo;t have classes even touching it, much less actually going into how it works. This is a huge weakness for colleges simply because of how much hiring is skills-based. Having something like &ldquo;Kubernetes proficiency&rdquo; is a huge boost to any CS resume, but because of the nature of how long it takes to build and establish a new class, colleges will never be able to keep up.</p>
+
+<h2 id="the-case-for-college">The case for college</h2>
+
+<p>To touch on the self-teaching side of CS, let me provide a personal anecdote:</p>
+
+<p>In my junior year of high school, my programming competition team started to become seriously competitive. We started to place highly at tournaments, and it became clear that if we wanted to reach the next level, we would have to learn real algorithms. It became my job to learn all things graph theory. In the span of a few weeks, I learned BFS, DFS, Dijkstra&rsquo;s, and Prim&rsquo;s - or so I thought.</p>
+
+<p>Fast forward to my second semester of college. Now, I&rsquo;m re-learning all of those algorithms, and I&rsquo;m realizing just how wrong I was about all of them. For one thing, my old versions of the algorithms all ran in at least n squared time, if not n cubed. Getting a formal education around these has taught me how to do these in linear or logarithmic time. My understanding of them has also far deepened, teaching me how to use them in a variety of different contexts I would have never imagined before.</p>
+
+<p>It&rsquo;s primarily this experience that has made me understand the value of a formal education. While I &ldquo;knew&rdquo; these algorithms before, I now realize how little I actually understood about them. I think idea holds for a multitude of computer science concepts.</p>
+
+<p>To address colleges&rsquo; difficulty in teaching new technologies, I actually don&rsquo;t think that&rsquo;s the job of the college. <strong>The job of the college is to provide the student with the necessary background as to be able to learn new tools quickly.</strong> The job of the college is not to teach current technologies, because if it was, those skills would be useless when that tool fell out of favor. The best thing a college can do is what the good ones are doing - provide the students with a solid foundation to build on. If the student has the right background, they&rsquo;ll be able to learn any tool you can throw at them.</p>
+
+<p>College also provides a multitude of other benefits not listed here including, but not limited to, establishing professional connections, facilitating learning outside one&rsquo;s comfort zone, and providing a safe space for young people to grow into the world.</p>
+
+<h2 id="conclusion">Conclusion</h2>
+
+<p>While I understand the ideas behind the nay-sayers of college, I ultimately disagree with them. I think that in the long-term, going to college is one of the best decisions you could make.</p>
+]]></content>
+        </item>
+        
+        <item>
+            <title>Hacking Farkle</title>
+            <link>https://pawalt.github.io/posts/2018/12/hacking-farkle/</link>
+            <pubDate>Sat, 29 Dec 2018 00:00:00 +0000</pubDate>
+            
+            <guid>https://pawalt.github.io/posts/2018/12/hacking-farkle/</guid>
+            <description>Recently, my family has been playing Farkle, a simple but difficult-to-analyze dice game. Farkle has the following rules:
  At the start of the turn, each player must roll the 6 dice. After rolling, the player sets aside all the dice that scored. The player can then choose to roll again to potentially get more points or to take the points they have already scored. If the player rolls and scores no points, they get 0 points and their turn is over.</description>
-    </item>
-    
-    <item>
-      <title>VPLS with OpenBSD</title>
-      <link>https://pawalt.github.io/posts/2018/01/vpls-with-openbsd/</link>
-      <pubDate>Mon, 15 Jan 2018 00:00:00 +0000</pubDate>
-      
-      <guid>https://pawalt.github.io/posts/2018/01/vpls-with-openbsd/</guid>
-      <description>VPLS is extremely useful in allowing multiple sites to be connected to a single bridged domain. Unfortunately, VPLS networks are typically implemented with proprietary technology like a Cisco router. OpenBSD lets us break free of the typical restrictions of proprietary technology and use 100% free software to make a full-fledged VPLS network.
+            <content type="html"><![CDATA[
+
+<p>Recently, my family has been playing Farkle, a simple but difficult-to-analyze dice game. Farkle has the following rules:</p>
+
+<ul>
+<li>At the start of the turn, each player must roll the 6 dice.</li>
+<li>After rolling, the player sets aside all the dice that scored.</li>
+<li>The player can then choose to roll again to potentially get more points or to take the points they have already scored.</li>
+<li>If the player rolls and scores no points, they get 0 points and their turn is over.</li>
+<li>If the player uses up all 6 dice, they can recycle all of them and roll all 6 again.</li>
+</ul>
+
+<p>The ways to score are as follows (dice cannot be double counted when scoring):</p>
+
+<table>
+<thead>
+<tr>
+<th>Combination</th>
+<th>Points</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>Single 1</td>
+<td>100</td>
+</tr>
+
+<tr>
+<td>Single 5</td>
+<td>50</td>
+</tr>
+
+<tr>
+<td>Three 1s</td>
+<td>300</td>
+</tr>
+
+<tr>
+<td>Three of any other number</td>
+<td>100 * number</td>
+</tr>
+
+<tr>
+<td>4 of any number</td>
+<td>1000</td>
+</tr>
+
+<tr>
+<td>5 of any number</td>
+<td>2000</td>
+</tr>
+
+<tr>
+<td>6 of any number</td>
+<td>3000</td>
+</tr>
+
+<tr>
+<td>4 of any number and 2 of another</td>
+<td>1500</td>
+</tr>
+
+<tr>
+<td>1-6 straight</td>
+<td>1500</td>
+</tr>
+
+<tr>
+<td>3 pairs</td>
+<td>1500</td>
+</tr>
+
+<tr>
+<td>2 triplets</td>
+<td>2500</td>
+</tr>
+</tbody>
+</table>
+
+<p>The winner is the first person to score 10,000 points. Being the competitive person I am, I decided to give the game some analysis and see if I could determine the expected value for a roll in order to figure out if I should roll or not. I chose to use Go for this because I figured I&rsquo;d be doing a good amount of brute forcing, so I wanted a pretty fast language that I was familiar with. I also just like writing Go.</p>
+
+<h1 id="pure-brute-force">Pure Brute Force</h1>
+
+<p>At first, my idea was to do 2 simple things to generate expected value:
+1. Use backtracking recursion to generate all the possible rolls
+2. Find all the ways to partition the dice in each roll and take the maximum scoring partition</p>
+
+<p>Starting with my backtracking method, I quickly wrote the following</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">backtrack</span>(<span style="color:#a6e22e">rolls</span> []<span style="color:#66d9ef">int</span>, <span style="color:#a6e22e">toRoll</span> <span style="color:#66d9ef">int</span>) <span style="color:#66d9ef">float64</span> {
+	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">toRoll</span> <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span> {
+		<span style="color:#66d9ef">return</span> float64(<span style="color:#a6e22e">maxScore</span>(<span style="color:#a6e22e">rolls</span>))
+	}
+
+	<span style="color:#a6e22e">sum</span> <span style="color:#f92672">:=</span> <span style="color:#ae81ff">0.0</span>
+	<span style="color:#66d9ef">for</span> <span style="color:#a6e22e">i</span> <span style="color:#f92672">:=</span> <span style="color:#ae81ff">1</span>; <span style="color:#a6e22e">i</span> <span style="color:#f92672">&lt;=</span> <span style="color:#ae81ff">6</span>; <span style="color:#a6e22e">i</span><span style="color:#f92672">++</span> {
+		<span style="color:#a6e22e">sum</span> <span style="color:#f92672">+=</span> <span style="color:#a6e22e">backtrack</span>(append(<span style="color:#a6e22e">rolls</span>, <span style="color:#a6e22e">i</span>), <span style="color:#a6e22e">toRoll</span><span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>)
+	}
+	<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">sum</span> <span style="color:#f92672">/</span> <span style="color:#ae81ff">6</span>
+}</code></pre></div>
+<p>The idea here is fairly simple: I loop through all 6 possible die rolls, sum them up, and average them. When I&rsquo;ve used up all of my rolls, I score the resulting dice.</p>
+
+<p>Scoring was not quite as simple as I had hoped, though. Partitioning a set is a little complicated, especially in a language like Go with no real concept of set algebra. The general algorithm I found is as follows:</p>
+
+<ol>
+<li>If there is only one element, return the set containing just that element. Otherwise, do the following:</li>
+<li>Remove the first element from the set and generate the partitions for the remaining set.</li>
+
+<li><p>For each generated partition, do the following</p>
+
+<ol>
+<li>Add the partition containing {removed element} + generated partition</li>
+
+<li><p>For each set in the generated partition:</p>
+
+<ol>
+<li><p>Add the partition containing {removed element + set} + generated partition \ set</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">generatePartitions</span>(<span style="color:#a6e22e">rolls</span> []<span style="color:#66d9ef">int</span>) [][][]<span style="color:#66d9ef">int</span> {
+	<span style="color:#66d9ef">if</span> len(<span style="color:#a6e22e">rolls</span>) <span style="color:#f92672">==</span> <span style="color:#ae81ff">1</span> {
+		<span style="color:#66d9ef">return</span> [][][]<span style="color:#66d9ef">int</span>{{{<span style="color:#a6e22e">rolls</span>[<span style="color:#ae81ff">0</span>]}}}
+	}
+
+	<span style="color:#a6e22e">firstElem</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">rolls</span>[<span style="color:#ae81ff">0</span>]
+	<span style="color:#a6e22e">rest</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">generatePartitions</span>(<span style="color:#a6e22e">rolls</span>[<span style="color:#ae81ff">1</span>:])
+	<span style="color:#a6e22e">toReturn</span> <span style="color:#f92672">:=</span> [][][]<span style="color:#66d9ef">int</span>{}
+
+	<span style="color:#66d9ef">for</span> <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">elem</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">range</span> <span style="color:#a6e22e">rest</span> {
+		<span style="color:#a6e22e">toReturn</span> = append(<span style="color:#a6e22e">toReturn</span>, append(<span style="color:#a6e22e">elem</span>, []<span style="color:#66d9ef">int</span>{<span style="color:#a6e22e">firstElem</span>}))
+
+		<span style="color:#66d9ef">for</span> <span style="color:#a6e22e">i</span>, <span style="color:#a6e22e">set</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">range</span> <span style="color:#a6e22e">elem</span> {
+			<span style="color:#a6e22e">removed</span> <span style="color:#f92672">:=</span> make([][]<span style="color:#66d9ef">int</span>, len(<span style="color:#a6e22e">elem</span>))
+			copy(<span style="color:#a6e22e">removed</span>, <span style="color:#a6e22e">elem</span>[:])
+			<span style="color:#a6e22e">removed</span> = append(<span style="color:#a6e22e">removed</span>[:<span style="color:#a6e22e">i</span>], <span style="color:#a6e22e">removed</span>[<span style="color:#a6e22e">i</span><span style="color:#f92672">+</span><span style="color:#ae81ff">1</span>:]<span style="color:#f92672">...</span>)
+			<span style="color:#a6e22e">toReturn</span> = append(<span style="color:#a6e22e">toReturn</span>, append(<span style="color:#a6e22e">removed</span>, append(<span style="color:#a6e22e">set</span>, <span style="color:#a6e22e">firstElem</span>)))
+		}
+	}
+
+	<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">toReturn</span>
+}</code></pre></div></li>
+</ol></li>
+</ol></li>
+</ol>
+
+<p>Then, I take all these partitions, score each one, and return the max of all the scores:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">maxScore</span>(<span style="color:#a6e22e">rolls</span> []<span style="color:#66d9ef">int</span>) <span style="color:#66d9ef">int</span> {
+	<span style="color:#a6e22e">max</span> <span style="color:#f92672">:=</span> <span style="color:#ae81ff">0</span>
+	<span style="color:#a6e22e">partitions</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">generatePartitions</span>(<span style="color:#a6e22e">rolls</span>)
+	<span style="color:#66d9ef">for</span> <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">partition</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">range</span> <span style="color:#a6e22e">partitions</span> {
+		<span style="color:#a6e22e">score</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">scoreSuperSet</span>(<span style="color:#a6e22e">partition</span>)
+		<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">score</span> &gt; <span style="color:#a6e22e">max</span> {
+			<span style="color:#a6e22e">max</span> = <span style="color:#a6e22e">score</span>
+		}
+	}
+
+	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">max</span> &gt; <span style="color:#ae81ff">0</span> {
+		<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">curScore</span> <span style="color:#f92672">+</span> <span style="color:#a6e22e">max</span>
+	}
+	<span style="color:#66d9ef">return</span> <span style="color:#ae81ff">0</span>
+}</code></pre></div>
+<p>After writing this code, however, I realized that it had quite a few problems:</p>
+
+<ul>
+<li>Backtracking could have to check up to 6^6 (46,656) rolls</li>
+<li>Each roll would have to be partitioned in every way possible. This follows the Bell numbers, so in the worst case, there are 203 possible partitions to check. Combined with the previous number, in the worst case, I have to check 947,1168 partitions.</li>
+<li>I&rsquo;m only accounting for one roll! The part of Farkle that makes it so hard to analyze is the ability to roll multiple times, but if you take a look at my code, I&rsquo;m only checking the possibilities for the direct next roll.</li>
+</ul>
+
+<p>Let&rsquo;s make a checklist for things to fix:</p>
+
+<ul class="task-list">
+<li><label><input type="checkbox" disabled class="task-list-item"> Be smarter than backtracking all possibilities</label></li>
+<li><label><input type="checkbox" disabled class="task-list-item"> Find a way to score a roll in constant time</label></li>
+<li><label><input type="checkbox" disabled class="task-list-item"> Account for possibly making multiple more rolls</label></li>
+</ul>
+
+<h1 id="improving-scoring">Improving Scoring</h1>
+
+<p>Something didn&rsquo;t sit right with me regarding how I did scoring. It seemed totally wrong that I would need to generate up to 203 combinations and take their max score. After all, I don&rsquo;t consider all possible combinations when scoring my rolls playing with my family. I group the dice according to their numbers and see if the groups fit into any of the scoring categories. Turns out, that works pretty well for real scoring. Here&rsquo;s what I came up with:</p>
+
+<p>1. Go through all the dice and record how many of each number there are. Also record which dice appear with which frequency</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">scoreRoll</span>(<span style="color:#a6e22e">rolls</span> []<span style="color:#66d9ef">int</span>, <span style="color:#a6e22e">score</span> <span style="color:#66d9ef">int</span>, <span style="color:#a6e22e">depth</span> <span style="color:#66d9ef">int</span>) <span style="color:#66d9ef">float64</span> {
+  <span style="color:#66d9ef">var</span> <span style="color:#a6e22e">occurences</span> [<span style="color:#ae81ff">6</span>]<span style="color:#66d9ef">int</span>
+  <span style="color:#66d9ef">for</span> <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">elem</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">range</span> <span style="color:#a6e22e">rolls</span> {
+    <span style="color:#a6e22e">occurences</span>[<span style="color:#a6e22e">elem</span><span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>]<span style="color:#f92672">++</span>
+  }
+  <span style="color:#66d9ef">var</span> <span style="color:#a6e22e">frequencies</span> [<span style="color:#ae81ff">7</span>][]<span style="color:#66d9ef">int</span>
+
+  <span style="color:#66d9ef">for</span> <span style="color:#a6e22e">i</span> <span style="color:#f92672">:=</span> <span style="color:#ae81ff">0</span>; <span style="color:#a6e22e">i</span> &lt; <span style="color:#ae81ff">6</span>; <span style="color:#a6e22e">i</span><span style="color:#f92672">++</span> {
+    <span style="color:#a6e22e">occurs</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">occurences</span>[<span style="color:#a6e22e">i</span>]
+    <span style="color:#a6e22e">frequencies</span>[<span style="color:#a6e22e">occurs</span>] = append(<span style="color:#a6e22e">frequencies</span>[<span style="color:#a6e22e">occurs</span>], <span style="color:#a6e22e">i</span>)
+  }
+<span style="color:#f92672">...</span></code></pre></div>
+<p>2. Compare the frequencies against the rules of the game</p>
+
+<p>I won&rsquo;t include this part since it&rsquo;s just a series of if/else statements. You can find the code at this iteration <a href="https://github.com/Pwpon500/farkle-odds/blob/fb544b026a537c3f3d75a7d9c08e871c545c0b04/main.go">here</a> if interested.</p>
+
+<p>3. Count the number of remaining 1s and 5s</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#66d9ef">if</span> <span style="color:#a6e22e">occurences</span>[<span style="color:#ae81ff">0</span>] &lt; <span style="color:#ae81ff">3</span> <span style="color:#f92672">&amp;&amp;</span> <span style="color:#a6e22e">countIndiv</span> {
+<span style="color:#a6e22e">toReturn</span> <span style="color:#f92672">+=</span> float64(<span style="color:#ae81ff">100</span> <span style="color:#f92672">*</span> <span style="color:#a6e22e">occurences</span>[<span style="color:#ae81ff">0</span>])
+<span style="color:#a6e22e">numUsed</span> <span style="color:#f92672">+=</span> <span style="color:#a6e22e">occurences</span>[<span style="color:#ae81ff">0</span>]
+}
+<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">occurences</span>[<span style="color:#ae81ff">4</span>] &lt; <span style="color:#ae81ff">3</span> <span style="color:#f92672">&amp;&amp;</span> <span style="color:#a6e22e">countIndiv</span> {
+<span style="color:#a6e22e">toReturn</span> <span style="color:#f92672">+=</span> float64(<span style="color:#ae81ff">50</span> <span style="color:#f92672">*</span> <span style="color:#a6e22e">occurences</span>[<span style="color:#ae81ff">4</span>])
+<span style="color:#a6e22e">numUsed</span> <span style="color:#f92672">+=</span> <span style="color:#a6e22e">occurences</span>[<span style="color:#ae81ff">4</span>]
+}</code></pre></div>
+<p>4. If there is no score, the player gets no points. Otherwise, they get their scored points plus the score they already have</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#66d9ef">if</span> <span style="color:#a6e22e">toReturn</span> <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span> {
+	<span style="color:#66d9ef">return</span> <span style="color:#ae81ff">0</span>
+}
+<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">toReturn</span> <span style="color:#f92672">+</span> float64(<span style="color:#a6e22e">score</span>)</code></pre></div>
+<p>Now, I have a scoring algorithm that will work in constant time. Let&rsquo;s update that checklist:</p>
+
+<ul class="task-list">
+<li><label><input type="checkbox" disabled class="task-list-item"> Be smarter than backtracking all possibilities</label></li>
+<li><label><input type="checkbox" checked disabled class="task-list-item"> Find a way to score a roll in constant time</label></li>
+<li><label><input type="checkbox" disabled class="task-list-item"> Account for possibly making multiple more rolls</label></li>
+</ul>
+
+<h1 id="more-backtracking">More Backtracking</h1>
+
+<p>Taking extra rolls into account is actually pretty simple in theory. When you score each roll, take the expected value of rolling again. If that expected value is higher than what you&rsquo;ve already scored, use it. Otherwise, keep your current score. This can be simply implemented as follows:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#a6e22e">expectedRoll</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">backtrack</span>([]<span style="color:#66d9ef">int</span>{}, <span style="color:#a6e22e">numLeft</span>, int(<span style="color:#a6e22e">toReturn</span>))
+<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">expectedRoll</span> &gt; float64(<span style="color:#a6e22e">toReturn</span>) {
+	<span style="color:#a6e22e">toReturn</span> = <span style="color:#a6e22e">expectedRoll</span>
+}</code></pre></div>
+<p>I ran this code and waited. I waited some more, and I waited even longer. Looking back, I committed the cardinal sin of recursion: recursion without a base case. Each roll would check the expected value of another roll, and the cycle would infinitely repeat. To fix this, I added a simple <code>depth</code> parameter to backtrack and implemented it as follows:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">backtrack</span>(<span style="color:#a6e22e">rolls</span> []<span style="color:#66d9ef">int</span>, <span style="color:#a6e22e">toRoll</span> <span style="color:#66d9ef">int</span>, <span style="color:#a6e22e">score</span> <span style="color:#66d9ef">int</span>, <span style="color:#a6e22e">depth</span> <span style="color:#66d9ef">int</span>) <span style="color:#66d9ef">float64</span> {
+	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">depth</span> <span style="color:#f92672">&gt;=</span> <span style="color:#a6e22e">maxDepth</span> {
+		<span style="color:#66d9ef">return</span> <span style="color:#ae81ff">0</span>
+	}</code></pre></div>
+<p><code>maxDepth</code> is just a global variable that the user sets to define how deep they want to recurse. I then pass depth into my scoring function and change my expected roll call to implement depth:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#a6e22e">expectedRoll</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">backtrack</span>([]<span style="color:#66d9ef">int</span>{}, <span style="color:#a6e22e">numLeft</span>, int(<span style="color:#a6e22e">toReturn</span>), <span style="color:#a6e22e">depth</span><span style="color:#f92672">+</span><span style="color:#ae81ff">1</span>)</code></pre></div>
+<p>Now, theoretically, I have an algorithm that&rsquo;ll go to whatever arbitrary depth I want. However, upon running this, I can only go to a depth of 2 before the program explodes running time. Since I&rsquo;m backtracking, each added level of depth makes the running time go up exponentially. So I&rsquo;ve fixed one problem, but just amplified another. Let&rsquo;s update the checklist:</p>
+
+<ul class="task-list">
+<li><label><input type="checkbox" disabled class="task-list-item"> Be smarter than backtracking all possibilities</label></li>
+<li><label><input type="checkbox" checked disabled class="task-list-item"> Find a way to score a roll in constant time</label></li>
+<li><label><input type="checkbox" checked disabled class="task-list-item"> Account for possibly making multiple more rolls</label></li>
+</ul>
+
+<h1 id="finding-a-model">Finding A Model</h1>
+
+<p>Faced with no idea for how to do this without backtracking, I had the idea of dynamic programming. If I could just find a decent model for the expected values, I could get rid of all the costly backtracking. I added support for command line flags and generated all the expected values from 1 to 400 with the following command (this is in fish but a similar thing can be done in bash):</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#66d9ef">for</span> x in <span style="color:#f92672">(</span>seq <span style="color:#ae81ff">400</span><span style="color:#f92672">)</span>
+    ./farkle-odds -dice <span style="color:#ae81ff">1</span> -score $x
+end</code></pre></div>
+<p>I used plot.ly to plot all this out and saw something pretty amazing:</p>
+
+<p><img src="/img/depth1_farkle.png" alt="Farkle at depth 1" />{:width=&ldquo;750px&rdquo;}</p>
+
+<p>It&rsquo;s linear! Realizing this, I generated lines of best fit for each of the numbers of dice. I then added the <code>approxScore</code> method in to use the lines of best fit to approximate the expected value of a score:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">approxScore</span>(<span style="color:#a6e22e">toRoll</span> <span style="color:#66d9ef">int</span>, <span style="color:#a6e22e">score</span> <span style="color:#66d9ef">int</span>) <span style="color:#66d9ef">float64</span> {
+	<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">mVals</span>[<span style="color:#a6e22e">toRoll</span><span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>]<span style="color:#f92672">*</span>float64(<span style="color:#a6e22e">score</span>) <span style="color:#f92672">+</span> <span style="color:#a6e22e">bVals</span>[<span style="color:#a6e22e">toRoll</span><span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>]
+}</code></pre></div>
+<h1 id="generating-lines">Generating Lines</h1>
+
+<p>After some plotting of greater depths, I concluded that the greater depths are <em>almost</em> linear, and any deviations from a linear model were not significant enough to substantially impact the generated expected values. Using this linearity to my advantage, I used the following algorithm to generate coefficients for a linear model for any arbitrary depth:</p>
+
+<ol>
+<li>Use <code>backtrack</code> to find 2 expected values</li>
+<li>Use simple algebra to find the <code>m</code> and <code>b</code> values for the line between those points</li>
+<li>Record those <code>m</code> and <code>b</code> values in JSON to a file</li>
+<li>Replace the old <code>m</code> and <code>b</code> values with the new ones and repeat the process</li>
+</ol>
+
+<p>Here&rsquo;s what that looks like in actual code:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">generateCoeffs</span>() {
+	<span style="color:#66d9ef">for</span> <span style="color:#a6e22e">i</span> <span style="color:#f92672">:=</span> <span style="color:#ae81ff">1</span>; <span style="color:#a6e22e">i</span> <span style="color:#f92672">&lt;=</span> <span style="color:#ae81ff">50</span>; <span style="color:#a6e22e">i</span><span style="color:#f92672">++</span> {
+		<span style="color:#a6e22e">newM</span> <span style="color:#f92672">:=</span> []<span style="color:#66d9ef">float64</span>{}
+		<span style="color:#a6e22e">newB</span> <span style="color:#f92672">:=</span> []<span style="color:#66d9ef">float64</span>{}
+		<span style="color:#66d9ef">for</span> <span style="color:#a6e22e">j</span> <span style="color:#f92672">:=</span> <span style="color:#ae81ff">1</span>; <span style="color:#a6e22e">j</span> <span style="color:#f92672">&lt;=</span> <span style="color:#ae81ff">6</span>; <span style="color:#a6e22e">j</span><span style="color:#f92672">++</span> {
+			<span style="color:#75715e">// find high and low vals for this iteration
+</span><span style="color:#75715e"></span>			<span style="color:#a6e22e">lowVal</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">backtrack</span>([]<span style="color:#66d9ef">int</span>{}, <span style="color:#a6e22e">j</span>, <span style="color:#ae81ff">0</span>)
+			<span style="color:#a6e22e">highVal</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">backtrack</span>([]<span style="color:#66d9ef">int</span>{}, <span style="color:#a6e22e">j</span>, <span style="color:#ae81ff">400</span>)
+			<span style="color:#75715e">// use high and low vals to generate line
+</span><span style="color:#75715e"></span>			<span style="color:#a6e22e">newM</span> = append(<span style="color:#a6e22e">newM</span>, (<span style="color:#a6e22e">highVal</span><span style="color:#f92672">-</span><span style="color:#a6e22e">lowVal</span>)<span style="color:#f92672">/</span><span style="color:#ae81ff">400</span>)
+			<span style="color:#a6e22e">newB</span> = append(<span style="color:#a6e22e">newB</span>, <span style="color:#a6e22e">lowVal</span>)
+		}
+		<span style="color:#a6e22e">coeffs</span>.<span style="color:#a6e22e">MCoeffs</span> = <span style="color:#a6e22e">newM</span>
+		<span style="color:#a6e22e">coeffs</span>.<span style="color:#a6e22e">BCoeffs</span> = <span style="color:#a6e22e">newB</span>
+		<span style="color:#a6e22e">writeVals</span>(<span style="color:#a6e22e">newM</span>, <span style="color:#a6e22e">newB</span>, <span style="color:#a6e22e">i</span>)
+	}
+	<span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Println</span>(<span style="color:#e6db74">&#34;Coefficients generated and written&#34;</span>)
+}</code></pre></div>
+<p>Now, we can finally check off that last box!</p>
+
+<ul class="task-list">
+<li><label><input type="checkbox" checked disabled class="task-list-item"> Be smarter than backtracking all possibilities</label></li>
+<li><label><input type="checkbox" checked disabled class="task-list-item"> Find a way to score a roll in constant time</label></li>
+<li><label><input type="checkbox" checked disabled class="task-list-item"> Account for possibly making multiple more rolls</label></li>
+</ul>
+
+<h1 id="conclusion">Conclusion</h1>
+
+<p>After some refactoring, I&rsquo;m really happy with the result of this little experiment. The linear model isn&rsquo;t a perfect fit for the expected values, but it&rsquo;s damn good and takes constant time to run.</p>
+
+<p>If you&rsquo;re interested in seeing what the code looks like, it can be found <a href="https://github.com/Pwpon500/farkle-odds">here</a>. Make sure to let me know if there are any improvements I can make.</p>
+
+<p>Also, here is some of the plotted data of the expected values for different dice rolls:</p>
+
+<p><a href="https://plot.ly/~Pwpon500/1">Depth 1</a> <a href="https://plot.ly/~Pwpon500/3">Depth 2</a></p>
+]]></content>
+        </item>
+        
+        <item>
+            <title>VPLS with OpenBSD</title>
+            <link>https://pawalt.github.io/posts/2018/01/vpls-with-openbsd/</link>
+            <pubDate>Mon, 15 Jan 2018 00:00:00 +0000</pubDate>
+            
+            <guid>https://pawalt.github.io/posts/2018/01/vpls-with-openbsd/</guid>
+            <description>VPLS is extremely useful in allowing multiple sites to be connected to a single bridged domain. Unfortunately, VPLS networks are typically implemented with proprietary technology like a Cisco router. OpenBSD lets us break free of the typical restrictions of proprietary technology and use 100% free software to make a full-fledged VPLS network.
 Why VPLS? With VPLS, you can deliver a layer 2 circuit over a routed backbone. This lets you extend that circuit from one location to another over a route that you can easily control.</description>
-    </item>
-    
-  </channel>
+            <content type="html"><![CDATA[
+
+<p>VPLS is extremely useful in allowing multiple sites to be connected to a single bridged domain. Unfortunately, VPLS networks are typically implemented with proprietary technology like a Cisco router. OpenBSD lets us break free of the typical restrictions of proprietary technology and use 100% free software to make a full-fledged VPLS network.</p>
+
+<h2 id="why-vpls">Why VPLS?</h2>
+
+<p>With VPLS, you can deliver a layer 2 circuit over a routed backbone. This lets you extend that circuit from one location to another over a route that you can easily control. If the backbone is not routed, you leave the path-finding up to spanning tree; while that works for smaller networks, the bigger your layer 2 domain gets, the less-reliable spanning tree gets. Eventually, it may start taking spaghetti-like paths, and there will be little you can do about it.</p>
+
+<p>VPLS is also useful in allowing the extension of layer 2 domain to a remote site. For example, in the case of VoIP phones, VPLS would allow the phones to be directly connected to the remote VoIP server, requiring no configuration whatsoever at the client site.</p>
+
+<h2 id="vpls-on-a-high-level">VPLS on a High Level</h2>
+
+<p>VPLS works by creating MPLS pseudowires (point-to-point layer 2 circuits) to every node you want to be part of your bridged domain. You then add each pseudowire as well as the physical interface you want to be &ldquo;bridged into&rdquo; the VPLS domain. In basic terms, you have now created a &ldquo;virtual switch,&rdquo; plugged each pseudowire into it, and plugged your physical interface into it.</p>
+
+<h2 id="the-setup">The Setup</h2>
+
+<p>This setup is completely virtualized, but it can be replicated easily with physical servers as well. There will be one provider and three provider edges. Each router will have a unique router-id by which it will be identified in OSPF and LDP. That address will be assigned to a secondary loopback interface (lo1) and advertised to the other routers using OSPF. The setup looks like this:
+<img src="/img/vpls_openbsd_1.png" alt="OpenBSD VPLS Base Setup" />{:width=&ldquo;500px&rdquo;}</p>
+
+<p>Each PE will be directly attached to the provider with a /30. I&rsquo;m using the 172.30.2.X IP scheme, but you can use whatever you want. Just make sure to match up those addresses between the provider and PE. Similarly, my use of 10.0.0.X for the router-id&rsquo;s can changed to whatever you want.</p>
+
+<h2 id="global-configuration">Global Configuration</h2>
+
+<p>On each of the nodes, you will have to enable some services. I&rsquo;m doing this in /etc/rc.conf.local. Append these two lines at the bottom to enable OSPF and LDP. Also make sure to wipe any lines disabling OSPF or LDP out of /etc/rc.conf and /etc/rc.conf.local:</p>
+
+<pre><code>ospfd_flags=&quot;&quot;
+ldpd_flags=&quot;&quot;
+</code></pre>
+
+<p>You&rsquo;ll also need to give each router its appropriate router-id on its loopback interface. You can put this in /etc/rc.local or use the hostname.XXX format. I prefer the hostname.XXX format.</p>
+
+<p>/etc/hostname.lo1:</p>
+
+<pre><code>inet 10.0.0.1 255.255.255.255
+description &quot;id_loopback&quot;
+</code></pre>
+
+<p>Make sure to change that 10.0.0.X address for each router.</p>
+
+<h2 id="provider-configuration">Provider Configuration</h2>
+
+<p>The provider is the simplest node to configure since it just acts as a glorified label switch.</p>
+
+<p>/etc/ospfd.conf:</p>
+
+<pre><code>router-id 10.0.0.1
+
+area 0.0.0.0 {
+    interface lo1
+    interface re0
+    interface re1
+    interface re2
+}
+</code></pre>
+
+<p>/etc/ldpd.conf:</p>
+
+<pre><code>router-id 10.0.0.1
+
+address-family ipv4 {
+    interface re0
+    interface re1
+    interface re2
+}
+</code></pre>
+
+<p>/etc/hostname.re0:</p>
+
+<pre><code>inet 172.30.2.1 255.255.255.252
+mpls
+description &quot;p1_edge&quot;
+</code></pre>
+
+<p>It&rsquo;s critical that you have the <code>mpls</code> line in your configuration. This lets OpenBSD know to treat that interface as a provider-facing interface. Repeat this interface configuration for each PE. Make sure to use a different IP for each interface as well as a different subnet. I recommend using consecutive /30 blocks (172.30.2.0/30, 172.30.2.4/30, 172.30.2.8/30).</p>
+
+<h2 id="pe-configuration">PE Configuration</h2>
+
+<p>The configuration of PEs is similar to that of the provider, but pseudowires have to be created to each other PE. Each PE has two physical interfaces. re0 is the provider-facing interface, and re1 is the client-facing interface.</p>
+
+<p>/etc/ospfd.conf:</p>
+
+<pre><code>router-id 10.0.0.2
+
+area 0.0.0.0 {
+    interface lo1
+    interface re0
+}
+</code></pre>
+
+<p>First, we have to create our pseudowires. These follow the mpwX naming convention. All we have to do in /etc/hostname.XXX is create them and bring them up. LDPD takes care of the rest. We also have to bring up our physical client-facing interface.</p>
+
+<p>/etc/hostname.mpw0:</p>
+
+<pre><code>create
+up
+</code></pre>
+
+<p>/etc/hostname.re1:</p>
+
+<pre><code>up
+</code></pre>
+
+<p>We also need to bring up our bridge interface and add our pseudowires and our physical interface to it.</p>
+
+<p>/etc/hostname.bridge0:</p>
+
+<pre><code>add re1
+add mpw0
+add mpw1
+up
+description &quot;vpls_bridge&quot;
+</code></pre>
+
+<p>Remember that in this LDP configuration, re0 is provider-facing, and re1 is client-facing. If you want some extra information on how ldpd.conf works, check out the <a href="https://man.openbsd.org/ldpd.conf.5">OpenBSD ldpd.conf man page</a>.
+/etc/ldpd.conf:</p>
+
+<pre><code>router-id 10.0.0.2
+
+address-family ipv4 {
+    interface re0
+}
+
+l2vpn pe1 type vpls {
+    bridge bridge0
+    interface re1
+
+    pseudowire mpw0 {
+        neighbor-id 10.0.0.3
+        pw-id 100
+    }
+    pseudowire mpw1 {
+        neighbor-id 10.0.0.4
+        pw-id 100
+    }
+}
+</code></pre>
+
+<p>Repeat this process with the rest of the PEs, changing the appropriate IPs and router-id&rsquo;s. After that&rsquo;s all done, restart ldpd and ospfd, use /etc/netstart to bring up interfaces, and you&rsquo;re ready to go!</p>
+
+<p>You can find my full configuration <a href="https://github.com/Pwpon500/vpls-openbsd">here</a>. Use this if you need any extra help figuring out the configurations for the nodes.</p>
+
+<h2 id="testing">Testing</h2>
+
+<p>To test your VPLS setup, connect clients to your physical interfaces on all your PEs, and give them all static IPs in the same subnet. Try to ping each other and see if the pings return. If they do, you did it! You&rsquo;ve now created a functional VPLS network.</p>
+
+<h2 id="diagnostics">Diagnostics</h2>
+
+<p>More likely, however, your network doesn&rsquo;t work. Don&rsquo;t worry! OpenBSD has some great tools for viewing LDP status. Here are some common commands and what they look like on a working PE:</p>
+
+<pre><code>pe1 / root / 23:18:29
+&gt; ~ # ldpctl show neighbor
+AF   ID              State       Remote Address    Uptime
+ipv4 10.0.0.1        OPERATIONAL 10.0.0.1        00:03:53
+ipv4 10.0.0.3        OPERATIONAL 10.0.0.3        00:03:11
+ipv4 10.0.0.5        OPERATIONAL 10.0.0.5        00:03:11
+pe1 / root / 23:18:29
+&gt; ~ # ldpctl show l2vpn pseudowire
+Interface   Neighbor        PWID           Status
+mpw0        10.0.0.3        100            UP
+mpw1        10.0.0.4        100            UP
+</code></pre>
+
+<p>You can also use ospfctl to if you think the problem may lie in the routing.</p>
+
+<h2 id="conclusion">Conclusion</h2>
+
+<p>VPLS is some amazing technology, and hopefully, you can implement it yourself with the help of this post.</p>
+]]></content>
+        </item>
+        
+    </channel>
 </rss>
