@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>philosophy on Peyton Walters</title>
+    <link>https://pwpon500.github.io/tags/philosophy/</link>
+    <description>Recent content in philosophy on Peyton Walters</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <copyright>Peyton Walters</copyright>
+    <lastBuildDate>Sat, 29 Dec 2018 00:00:00 +0000</lastBuildDate>
+    
+	<atom:link href="https://pwpon500.github.io/tags/philosophy/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>Thoreau vs. Peterson - A Lesson in Solitude</title>
+      <link>https://pwpon500.github.io/thoreau-vs-peterson/</link>
+      <pubDate>Sat, 29 Dec 2018 00:00:00 +0000</pubDate>
+      
+      <guid>https://pwpon500.github.io/thoreau-vs-peterson/</guid>
+      <description>Like the water, the Walden ice, seen near at hand, has a green tint, but at a distance is beautifully blue, and you can easily tell it from the white ice of the river, or the merely greenish ice of some ponds, a quarter of a mile off. Sometimes one of those great cakes slips from the ice-man&amp;rsquo;s sled into the village street, and lies there for a week like a great emerald, an object of interest to all passers.</description>
+    </item>
+    
+  </channel>
+</rss>

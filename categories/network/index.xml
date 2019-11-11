@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>network on Peyton Walters</title>
+    <link>https://pwpon500.github.io/categories/network/</link>
+    <description>Recent content in network on Peyton Walters</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <copyright>Peyton Walters</copyright>
+    <lastBuildDate>Thu, 27 Jun 2019 00:00:00 +0000</lastBuildDate>
+    
+	<atom:link href="https://pwpon500.github.io/categories/network/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>NFQUEUE and the Mysterious RESET</title>
+      <link>https://pwpon500.github.io/posts/2019/06/nfqueue-and-the-mysterious-reset/</link>
+      <pubDate>Thu, 27 Jun 2019 00:00:00 +0000</pubDate>
+      
+      <guid>https://pwpon500.github.io/posts/2019/06/nfqueue-and-the-mysterious-reset/</guid>
+      <description>While working on my load balancer, Caplance, I ran into a very strange error when trying to establish a connection between a client and a backend. Before I go to deep, though, let me give a quick intro into how TCP connection establishment works.
+Types of Message When establishing a TCP connection, there are 4 possible packet types you could see:
+ SYN (S in tcpdump) - Always the first message sent.</description>
+    </item>
+    
+  </channel>
+</rss>

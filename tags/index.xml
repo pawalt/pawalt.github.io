@@ -1,0 +1,232 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Tags on Peyton Walters</title>
+    <link>https://pwpon500.github.io/tags/</link>
+    <description>Recent content in Tags on Peyton Walters</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <copyright>Peyton Walters</copyright>
+    <lastBuildDate>Fri, 26 Jul 2019 00:00:00 +0000</lastBuildDate>
+    
+	<atom:link href="https://pwpon500.github.io/tags/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>ansible</title>
+      <link>https://pwpon500.github.io/tags/ansible/</link>
+      <pubDate>Fri, 26 Jul 2019 00:00:00 +0000</pubDate>
+      
+      <guid>https://pwpon500.github.io/tags/ansible/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>homelab</title>
+      <link>https://pwpon500.github.io/tags/homelab/</link>
+      <pubDate>Fri, 26 Jul 2019 00:00:00 +0000</pubDate>
+      
+      <guid>https://pwpon500.github.io/tags/homelab/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>kubernetes</title>
+      <link>https://pwpon500.github.io/tags/kubernetes/</link>
+      <pubDate>Fri, 26 Jul 2019 00:00:00 +0000</pubDate>
+      
+      <guid>https://pwpon500.github.io/tags/kubernetes/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>linux</title>
+      <link>https://pwpon500.github.io/tags/linux/</link>
+      <pubDate>Fri, 26 Jul 2019 00:00:00 +0000</pubDate>
+      
+      <guid>https://pwpon500.github.io/tags/linux/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>terraform</title>
+      <link>https://pwpon500.github.io/tags/terraform/</link>
+      <pubDate>Fri, 26 Jul 2019 00:00:00 +0000</pubDate>
+      
+      <guid>https://pwpon500.github.io/tags/terraform/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>caplance</title>
+      <link>https://pwpon500.github.io/tags/caplance/</link>
+      <pubDate>Sun, 07 Jul 2019 00:00:00 +0000</pubDate>
+      
+      <guid>https://pwpon500.github.io/tags/caplance/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>go</title>
+      <link>https://pwpon500.github.io/tags/go/</link>
+      <pubDate>Sun, 07 Jul 2019 00:00:00 +0000</pubDate>
+      
+      <guid>https://pwpon500.github.io/tags/go/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>golang</title>
+      <link>https://pwpon500.github.io/tags/golang/</link>
+      <pubDate>Sun, 07 Jul 2019 00:00:00 +0000</pubDate>
+      
+      <guid>https://pwpon500.github.io/tags/golang/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>load balancing</title>
+      <link>https://pwpon500.github.io/tags/load-balancing/</link>
+      <pubDate>Sun, 07 Jul 2019 00:00:00 +0000</pubDate>
+      
+      <guid>https://pwpon500.github.io/tags/load-balancing/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>networking</title>
+      <link>https://pwpon500.github.io/tags/networking/</link>
+      <pubDate>Sun, 07 Jul 2019 00:00:00 +0000</pubDate>
+      
+      <guid>https://pwpon500.github.io/tags/networking/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>neovim</title>
+      <link>https://pwpon500.github.io/tags/neovim/</link>
+      <pubDate>Sat, 01 Jun 2019 00:00:00 +0000</pubDate>
+      
+      <guid>https://pwpon500.github.io/tags/neovim/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>vim</title>
+      <link>https://pwpon500.github.io/tags/vim/</link>
+      <pubDate>Sat, 01 Jun 2019 00:00:00 +0000</pubDate>
+      
+      <guid>https://pwpon500.github.io/tags/vim/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>personal</title>
+      <link>https://pwpon500.github.io/tags/personal/</link>
+      <pubDate>Tue, 21 May 2019 00:00:00 +0000</pubDate>
+      
+      <guid>https://pwpon500.github.io/tags/personal/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>education</title>
+      <link>https://pwpon500.github.io/tags/education/</link>
+      <pubDate>Mon, 29 Apr 2019 00:00:00 +0000</pubDate>
+      
+      <guid>https://pwpon500.github.io/tags/education/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>mininet</title>
+      <link>https://pwpon500.github.io/tags/mininet/</link>
+      <pubDate>Mon, 29 Apr 2019 00:00:00 +0000</pubDate>
+      
+      <guid>https://pwpon500.github.io/tags/mininet/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>maglev</title>
+      <link>https://pwpon500.github.io/tags/maglev/</link>
+      <pubDate>Sat, 20 Apr 2019 00:00:00 +0000</pubDate>
+      
+      <guid>https://pwpon500.github.io/tags/maglev/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>college</title>
+      <link>https://pwpon500.github.io/tags/college/</link>
+      <pubDate>Sun, 14 Apr 2019 00:00:00 +0000</pubDate>
+      
+      <guid>https://pwpon500.github.io/tags/college/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>computer science</title>
+      <link>https://pwpon500.github.io/tags/computer-science/</link>
+      <pubDate>Sun, 14 Apr 2019 00:00:00 +0000</pubDate>
+      
+      <guid>https://pwpon500.github.io/tags/computer-science/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>farkle</title>
+      <link>https://pwpon500.github.io/tags/farkle/</link>
+      <pubDate>Sat, 29 Dec 2018 00:00:00 +0000</pubDate>
+      
+      <guid>https://pwpon500.github.io/tags/farkle/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>philosophy</title>
+      <link>https://pwpon500.github.io/tags/philosophy/</link>
+      <pubDate>Sat, 29 Dec 2018 00:00:00 +0000</pubDate>
+      
+      <guid>https://pwpon500.github.io/tags/philosophy/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>probability</title>
+      <link>https://pwpon500.github.io/tags/probability/</link>
+      <pubDate>Sat, 29 Dec 2018 00:00:00 +0000</pubDate>
+      
+      <guid>https://pwpon500.github.io/tags/probability/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>mpls</title>
+      <link>https://pwpon500.github.io/tags/mpls/</link>
+      <pubDate>Mon, 15 Jan 2018 00:00:00 +0000</pubDate>
+      
+      <guid>https://pwpon500.github.io/tags/mpls/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>openbsd</title>
+      <link>https://pwpon500.github.io/tags/openbsd/</link>
+      <pubDate>Mon, 15 Jan 2018 00:00:00 +0000</pubDate>
+      
+      <guid>https://pwpon500.github.io/tags/openbsd/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>vpls</title>
+      <link>https://pwpon500.github.io/tags/vpls/</link>
+      <pubDate>Mon, 15 Jan 2018 00:00:00 +0000</pubDate>
+      
+      <guid>https://pwpon500.github.io/tags/vpls/</guid>
+      <description></description>
+    </item>
+    
+  </channel>
+</rss>
