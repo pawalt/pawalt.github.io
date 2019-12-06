@@ -149,9 +149,9 @@ Why VPLS? With VPLS, you can deliver a layer 2 circuit over a routed backbone. T
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
       <guid>https://pawalt.github.io/about/</guid>
-      <description>Hey everyone! I&amp;rsquo;m Peyton Walters and I&amp;rsquo;m a student at the University of Pennsylvania studying Networked and Social Systems Engineering.
-I&amp;rsquo;m particularly interested in IP networking, distributed systems, and Unix-based operating systems, but there are far more things than that which pique my interest. Some of my past and current work includes:
- Caplance, a network-level load balancer in the spirit of Maglev Jiffy, a program that automated the deployment of KVM/Libvirt virtual machines An ansible and ruby program to automate the deployment of ssh keys Go Log Server, simple program to send rsyslog entries to a redis stream Alpine, a chef cookbook to add chef support to Alpine Linux  </description>
+      <description>Hey everyone! I&amp;rsquo;m Peyton Walters and I&amp;rsquo;m a student at the University of Pennsylvania studying Networked and Social Systems Engineering and a software engineering contractor for Bloomberg.
+I&amp;rsquo;m particularly interested in distributed systems (particularly Kubernetes), IP networking, and Unix-based operating systems, but there are far more things than that which pique my interest. Some of my past and current work includes:
+ SPIRE TPM Plugin, a set of plugins to allow SPIRE to do TPM 2-based node attestation Penn Labs&amp;rsquo; Infrastructure, a repository to fully control a Penn Labs&amp;rsquo; infrastructure as code Caplance, a network-level load balancer in the spirit of Maglev Jiffy, a program that automated the deployment of KVM/Libvirt virtual machines Go Log Server, simple program to send rsyslog entries to a redis stream Alpine, a chef cookbook to add chef support to Alpine Linux  </description>
     </item>
     
   </channel>
