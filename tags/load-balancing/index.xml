@@ -2,22 +2,22 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>load balancing on Peyton Walters</title>
-    <link>https://pawalt.github.io/tags/load-balancing/</link>
+    <link>https://pawa.lt/tags/load-balancing/</link>
     <description>Recent content in load balancing on Peyton Walters</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     <copyright>Peyton Walters</copyright>
     <lastBuildDate>Sun, 07 Jul 2019 00:00:00 +0000</lastBuildDate>
     
-	<atom:link href="https://pawalt.github.io/tags/load-balancing/index.xml" rel="self" type="application/rss+xml" />
+	<atom:link href="https://pawa.lt/tags/load-balancing/index.xml" rel="self" type="application/rss+xml" />
     
     
     <item>
       <title>Caplance Development Update 3</title>
-      <link>https://pawalt.github.io/posts/2019/07/caplance-development-update-3/</link>
+      <link>https://pawa.lt/posts/2019/07/caplance-development-update-3/</link>
       <pubDate>Sun, 07 Jul 2019 00:00:00 +0000</pubDate>
       
-      <guid>https://pawalt.github.io/posts/2019/07/caplance-development-update-3/</guid>
+      <guid>https://pawa.lt/posts/2019/07/caplance-development-update-3/</guid>
       <description>🎉 We made it! 🎉 After 6 months of work, Caplance is finally at MVP. The brief release notes can be found here.
 To get to MVP, I had to implement the following functionality:
  Logging Config file parsing  Combining all the previous updates, we get the following feature set for the MVP:
@@ -26,20 +26,20 @@ To get to MVP, I had to implement the following functionality:
     
     <item>
       <title>Caplance Development Update 2</title>
-      <link>https://pawalt.github.io/posts/2019/06/caplance-development-update-2/</link>
+      <link>https://pawa.lt/posts/2019/06/caplance-development-update-2/</link>
       <pubDate>Sun, 30 Jun 2019 00:00:00 +0000</pubDate>
       
-      <guid>https://pawalt.github.io/posts/2019/06/caplance-development-update-2/</guid>
+      <guid>https://pawa.lt/posts/2019/06/caplance-development-update-2/</guid>
       <description>I&amp;rsquo;m back! Over the past few weeks, I&amp;rsquo;ve had much more time to work on Caplance than I had in the prior months, so, naturally, a ton of work has gotten done in these few weeks. Specifically, I&amp;rsquo;ve implemented the following functionality:
  Backend registration The following controls from the backends:  PAUSE DEREGISTER RESUME HEALTH  caplancectl to tell a running client process to issue one of those commands Graceful stop for backends Packet listening on NFQUEUE Refactor project structure  If you&amp;rsquo;ve been keeping track, you&amp;rsquo;ll notice that this puts us very close to the Caplance MVP!</description>
     </item>
     
     <item>
       <title>NFQUEUE and the Mysterious RESET</title>
-      <link>https://pawalt.github.io/posts/2019/06/nfqueue-and-the-mysterious-reset/</link>
+      <link>https://pawa.lt/posts/2019/06/nfqueue-and-the-mysterious-reset/</link>
       <pubDate>Thu, 27 Jun 2019 00:00:00 +0000</pubDate>
       
-      <guid>https://pawalt.github.io/posts/2019/06/nfqueue-and-the-mysterious-reset/</guid>
+      <guid>https://pawa.lt/posts/2019/06/nfqueue-and-the-mysterious-reset/</guid>
       <description>While working on my load balancer, Caplance, I ran into a very strange error when trying to establish a connection between a client and a backend. Before I go to deep, though, let me give a quick intro into how TCP connection establishment works.
 Types of Message When establishing a TCP connection, there are 4 possible packet types you could see:
  SYN (S in tcpdump) - Always the first message sent.</description>
@@ -47,20 +47,20 @@ Types of Message When establishing a TCP connection, there are 4 possible packet
     
     <item>
       <title>Caplance Development Update 1</title>
-      <link>https://pawalt.github.io/posts/2019/05/caplance-development-update-1/</link>
+      <link>https://pawa.lt/posts/2019/05/caplance-development-update-1/</link>
       <pubDate>Sat, 25 May 2019 00:00:00 +0000</pubDate>
       
-      <guid>https://pawalt.github.io/posts/2019/05/caplance-development-update-1/</guid>
+      <guid>https://pawa.lt/posts/2019/05/caplance-development-update-1/</guid>
       <description>After countless hours spent reading the GoDocs, googling &amp;ldquo;gre packets golang&amp;rdquo;, and staring at the term SIGSEV, I&amp;rsquo;ve got an update! I&amp;rsquo;ve made pretty significant progress on the actual load balancer, implementing most of the base functionality. So far, the load balancer can:
  listen for and ingest whole IP packets select the backend for a packet based on a combination of IP and source port encapsulate packets in UDP and send them to the appropriate backend attach a specified virtual IP  I&amp;rsquo;ve also implemented some extremely rudimentary testing and setup, but I&amp;rsquo;m going to rework those once the project structure solidifies some more.</description>
     </item>
     
     <item>
       <title>Maglev - A Next-Generation Load Balancer</title>
-      <link>https://pawalt.github.io/posts/2019/04/maglev-a-next-generation-load-balancer/</link>
+      <link>https://pawa.lt/posts/2019/04/maglev-a-next-generation-load-balancer/</link>
       <pubDate>Sat, 20 Apr 2019 00:00:00 +0000</pubDate>
       
-      <guid>https://pawalt.github.io/posts/2019/04/maglev-a-next-generation-load-balancer/</guid>
+      <guid>https://pawa.lt/posts/2019/04/maglev-a-next-generation-load-balancer/</guid>
       <description>When reading Google&amp;rsquo;s SRE book, I came across the section on load balancing. The book breaks up load balancing into three levels:
  DNS level Network level/Virtual IP level Datacenter level  While I was familiar with the Datacenter level (aka reverse proxy load balancing) and DNS load balancing (achieved partially through round robin DNS), I had never looked at network-level load balancing. After reading this section, I was fascinated with how their network-level load balancing works.</description>
     </item>

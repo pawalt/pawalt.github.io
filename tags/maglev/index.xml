@@ -2,22 +2,22 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>maglev on Peyton Walters</title>
-    <link>https://pawalt.github.io/tags/maglev/</link>
+    <link>https://pawa.lt/tags/maglev/</link>
     <description>Recent content in maglev on Peyton Walters</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     <copyright>Peyton Walters</copyright>
     <lastBuildDate>Sat, 20 Apr 2019 00:00:00 +0000</lastBuildDate>
     
-	<atom:link href="https://pawalt.github.io/tags/maglev/index.xml" rel="self" type="application/rss+xml" />
+	<atom:link href="https://pawa.lt/tags/maglev/index.xml" rel="self" type="application/rss+xml" />
     
     
     <item>
       <title>Maglev - A Next-Generation Load Balancer</title>
-      <link>https://pawalt.github.io/posts/2019/04/maglev-a-next-generation-load-balancer/</link>
+      <link>https://pawa.lt/posts/2019/04/maglev-a-next-generation-load-balancer/</link>
       <pubDate>Sat, 20 Apr 2019 00:00:00 +0000</pubDate>
       
-      <guid>https://pawalt.github.io/posts/2019/04/maglev-a-next-generation-load-balancer/</guid>
+      <guid>https://pawa.lt/posts/2019/04/maglev-a-next-generation-load-balancer/</guid>
       <description>When reading Google&amp;rsquo;s SRE book, I came across the section on load balancing. The book breaks up load balancing into three levels:
  DNS level Network level/Virtual IP level Datacenter level  While I was familiar with the Datacenter level (aka reverse proxy load balancing) and DNS load balancing (achieved partially through round robin DNS), I had never looked at network-level load balancing. After reading this section, I was fascinated with how their network-level load balancing works.</description>
     </item>

@@ -2,22 +2,22 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>probability on Peyton Walters</title>
-    <link>https://pawalt.github.io/tags/probability/</link>
+    <link>https://pawa.lt/tags/probability/</link>
     <description>Recent content in probability on Peyton Walters</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     <copyright>Peyton Walters</copyright>
     <lastBuildDate>Sat, 29 Dec 2018 00:00:00 +0000</lastBuildDate>
     
-	<atom:link href="https://pawalt.github.io/tags/probability/index.xml" rel="self" type="application/rss+xml" />
+	<atom:link href="https://pawa.lt/tags/probability/index.xml" rel="self" type="application/rss+xml" />
     
     
     <item>
       <title>Hacking Farkle</title>
-      <link>https://pawalt.github.io/posts/2018/12/hacking-farkle/</link>
+      <link>https://pawa.lt/posts/2018/12/hacking-farkle/</link>
       <pubDate>Sat, 29 Dec 2018 00:00:00 +0000</pubDate>
       
-      <guid>https://pawalt.github.io/posts/2018/12/hacking-farkle/</guid>
+      <guid>https://pawa.lt/posts/2018/12/hacking-farkle/</guid>
       <description>Recently, my family has been playing Farkle, a simple but difficult-to-analyze dice game. Farkle has the following rules:
  At the start of the turn, each player must roll the 6 dice. After rolling, the player sets aside all the dice that scored. The player can then choose to roll again to potentially get more points or to take the points they have already scored. If the player rolls and scores no points, they get 0 points and their turn is over.</description>
     </item>

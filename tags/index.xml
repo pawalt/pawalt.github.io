@@ -2,229 +2,229 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Tags on Peyton Walters</title>
-    <link>https://pawalt.github.io/tags/</link>
+    <link>https://pawa.lt/tags/</link>
     <description>Recent content in Tags on Peyton Walters</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     <copyright>Peyton Walters</copyright>
     <lastBuildDate>Fri, 26 Jul 2019 00:00:00 +0000</lastBuildDate>
     
-	<atom:link href="https://pawalt.github.io/tags/index.xml" rel="self" type="application/rss+xml" />
+	<atom:link href="https://pawa.lt/tags/index.xml" rel="self" type="application/rss+xml" />
     
     
     <item>
       <title>ansible</title>
-      <link>https://pawalt.github.io/tags/ansible/</link>
+      <link>https://pawa.lt/tags/ansible/</link>
       <pubDate>Fri, 26 Jul 2019 00:00:00 +0000</pubDate>
       
-      <guid>https://pawalt.github.io/tags/ansible/</guid>
+      <guid>https://pawa.lt/tags/ansible/</guid>
       <description></description>
     </item>
     
     <item>
       <title>homelab</title>
-      <link>https://pawalt.github.io/tags/homelab/</link>
+      <link>https://pawa.lt/tags/homelab/</link>
       <pubDate>Fri, 26 Jul 2019 00:00:00 +0000</pubDate>
       
-      <guid>https://pawalt.github.io/tags/homelab/</guid>
+      <guid>https://pawa.lt/tags/homelab/</guid>
       <description></description>
     </item>
     
     <item>
       <title>kubernetes</title>
-      <link>https://pawalt.github.io/tags/kubernetes/</link>
+      <link>https://pawa.lt/tags/kubernetes/</link>
       <pubDate>Fri, 26 Jul 2019 00:00:00 +0000</pubDate>
       
-      <guid>https://pawalt.github.io/tags/kubernetes/</guid>
+      <guid>https://pawa.lt/tags/kubernetes/</guid>
       <description></description>
     </item>
     
     <item>
       <title>linux</title>
-      <link>https://pawalt.github.io/tags/linux/</link>
+      <link>https://pawa.lt/tags/linux/</link>
       <pubDate>Fri, 26 Jul 2019 00:00:00 +0000</pubDate>
       
-      <guid>https://pawalt.github.io/tags/linux/</guid>
+      <guid>https://pawa.lt/tags/linux/</guid>
       <description></description>
     </item>
     
     <item>
       <title>terraform</title>
-      <link>https://pawalt.github.io/tags/terraform/</link>
+      <link>https://pawa.lt/tags/terraform/</link>
       <pubDate>Fri, 26 Jul 2019 00:00:00 +0000</pubDate>
       
-      <guid>https://pawalt.github.io/tags/terraform/</guid>
+      <guid>https://pawa.lt/tags/terraform/</guid>
       <description></description>
     </item>
     
     <item>
       <title>caplance</title>
-      <link>https://pawalt.github.io/tags/caplance/</link>
+      <link>https://pawa.lt/tags/caplance/</link>
       <pubDate>Sun, 07 Jul 2019 00:00:00 +0000</pubDate>
       
-      <guid>https://pawalt.github.io/tags/caplance/</guid>
+      <guid>https://pawa.lt/tags/caplance/</guid>
       <description></description>
     </item>
     
     <item>
       <title>go</title>
-      <link>https://pawalt.github.io/tags/go/</link>
+      <link>https://pawa.lt/tags/go/</link>
       <pubDate>Sun, 07 Jul 2019 00:00:00 +0000</pubDate>
       
-      <guid>https://pawalt.github.io/tags/go/</guid>
+      <guid>https://pawa.lt/tags/go/</guid>
       <description></description>
     </item>
     
     <item>
       <title>golang</title>
-      <link>https://pawalt.github.io/tags/golang/</link>
+      <link>https://pawa.lt/tags/golang/</link>
       <pubDate>Sun, 07 Jul 2019 00:00:00 +0000</pubDate>
       
-      <guid>https://pawalt.github.io/tags/golang/</guid>
+      <guid>https://pawa.lt/tags/golang/</guid>
       <description></description>
     </item>
     
     <item>
       <title>load balancing</title>
-      <link>https://pawalt.github.io/tags/load-balancing/</link>
+      <link>https://pawa.lt/tags/load-balancing/</link>
       <pubDate>Sun, 07 Jul 2019 00:00:00 +0000</pubDate>
       
-      <guid>https://pawalt.github.io/tags/load-balancing/</guid>
+      <guid>https://pawa.lt/tags/load-balancing/</guid>
       <description></description>
     </item>
     
     <item>
       <title>networking</title>
-      <link>https://pawalt.github.io/tags/networking/</link>
+      <link>https://pawa.lt/tags/networking/</link>
       <pubDate>Sun, 07 Jul 2019 00:00:00 +0000</pubDate>
       
-      <guid>https://pawalt.github.io/tags/networking/</guid>
+      <guid>https://pawa.lt/tags/networking/</guid>
       <description></description>
     </item>
     
     <item>
       <title>neovim</title>
-      <link>https://pawalt.github.io/tags/neovim/</link>
+      <link>https://pawa.lt/tags/neovim/</link>
       <pubDate>Sat, 01 Jun 2019 00:00:00 +0000</pubDate>
       
-      <guid>https://pawalt.github.io/tags/neovim/</guid>
+      <guid>https://pawa.lt/tags/neovim/</guid>
       <description></description>
     </item>
     
     <item>
       <title>vim</title>
-      <link>https://pawalt.github.io/tags/vim/</link>
+      <link>https://pawa.lt/tags/vim/</link>
       <pubDate>Sat, 01 Jun 2019 00:00:00 +0000</pubDate>
       
-      <guid>https://pawalt.github.io/tags/vim/</guid>
+      <guid>https://pawa.lt/tags/vim/</guid>
       <description></description>
     </item>
     
     <item>
       <title>personal</title>
-      <link>https://pawalt.github.io/tags/personal/</link>
+      <link>https://pawa.lt/tags/personal/</link>
       <pubDate>Tue, 21 May 2019 00:00:00 +0000</pubDate>
       
-      <guid>https://pawalt.github.io/tags/personal/</guid>
+      <guid>https://pawa.lt/tags/personal/</guid>
       <description></description>
     </item>
     
     <item>
       <title>education</title>
-      <link>https://pawalt.github.io/tags/education/</link>
+      <link>https://pawa.lt/tags/education/</link>
       <pubDate>Mon, 29 Apr 2019 00:00:00 +0000</pubDate>
       
-      <guid>https://pawalt.github.io/tags/education/</guid>
+      <guid>https://pawa.lt/tags/education/</guid>
       <description></description>
     </item>
     
     <item>
       <title>mininet</title>
-      <link>https://pawalt.github.io/tags/mininet/</link>
+      <link>https://pawa.lt/tags/mininet/</link>
       <pubDate>Mon, 29 Apr 2019 00:00:00 +0000</pubDate>
       
-      <guid>https://pawalt.github.io/tags/mininet/</guid>
+      <guid>https://pawa.lt/tags/mininet/</guid>
       <description></description>
     </item>
     
     <item>
       <title>maglev</title>
-      <link>https://pawalt.github.io/tags/maglev/</link>
+      <link>https://pawa.lt/tags/maglev/</link>
       <pubDate>Sat, 20 Apr 2019 00:00:00 +0000</pubDate>
       
-      <guid>https://pawalt.github.io/tags/maglev/</guid>
+      <guid>https://pawa.lt/tags/maglev/</guid>
       <description></description>
     </item>
     
     <item>
       <title>college</title>
-      <link>https://pawalt.github.io/tags/college/</link>
+      <link>https://pawa.lt/tags/college/</link>
       <pubDate>Sun, 14 Apr 2019 00:00:00 +0000</pubDate>
       
-      <guid>https://pawalt.github.io/tags/college/</guid>
+      <guid>https://pawa.lt/tags/college/</guid>
       <description></description>
     </item>
     
     <item>
       <title>computer science</title>
-      <link>https://pawalt.github.io/tags/computer-science/</link>
+      <link>https://pawa.lt/tags/computer-science/</link>
       <pubDate>Sun, 14 Apr 2019 00:00:00 +0000</pubDate>
       
-      <guid>https://pawalt.github.io/tags/computer-science/</guid>
+      <guid>https://pawa.lt/tags/computer-science/</guid>
       <description></description>
     </item>
     
     <item>
       <title>farkle</title>
-      <link>https://pawalt.github.io/tags/farkle/</link>
+      <link>https://pawa.lt/tags/farkle/</link>
       <pubDate>Sat, 29 Dec 2018 00:00:00 +0000</pubDate>
       
-      <guid>https://pawalt.github.io/tags/farkle/</guid>
+      <guid>https://pawa.lt/tags/farkle/</guid>
       <description></description>
     </item>
     
     <item>
       <title>philosophy</title>
-      <link>https://pawalt.github.io/tags/philosophy/</link>
+      <link>https://pawa.lt/tags/philosophy/</link>
       <pubDate>Sat, 29 Dec 2018 00:00:00 +0000</pubDate>
       
-      <guid>https://pawalt.github.io/tags/philosophy/</guid>
+      <guid>https://pawa.lt/tags/philosophy/</guid>
       <description></description>
     </item>
     
     <item>
       <title>probability</title>
-      <link>https://pawalt.github.io/tags/probability/</link>
+      <link>https://pawa.lt/tags/probability/</link>
       <pubDate>Sat, 29 Dec 2018 00:00:00 +0000</pubDate>
       
-      <guid>https://pawalt.github.io/tags/probability/</guid>
+      <guid>https://pawa.lt/tags/probability/</guid>
       <description></description>
     </item>
     
     <item>
       <title>mpls</title>
-      <link>https://pawalt.github.io/tags/mpls/</link>
+      <link>https://pawa.lt/tags/mpls/</link>
       <pubDate>Mon, 15 Jan 2018 00:00:00 +0000</pubDate>
       
-      <guid>https://pawalt.github.io/tags/mpls/</guid>
+      <guid>https://pawa.lt/tags/mpls/</guid>
       <description></description>
     </item>
     
     <item>
       <title>openbsd</title>
-      <link>https://pawalt.github.io/tags/openbsd/</link>
+      <link>https://pawa.lt/tags/openbsd/</link>
       <pubDate>Mon, 15 Jan 2018 00:00:00 +0000</pubDate>
       
-      <guid>https://pawalt.github.io/tags/openbsd/</guid>
+      <guid>https://pawa.lt/tags/openbsd/</guid>
       <description></description>
     </item>
     
     <item>
       <title>vpls</title>
-      <link>https://pawalt.github.io/tags/vpls/</link>
+      <link>https://pawa.lt/tags/vpls/</link>
       <pubDate>Mon, 15 Jan 2018 00:00:00 +0000</pubDate>
       
-      <guid>https://pawalt.github.io/tags/vpls/</guid>
+      <guid>https://pawa.lt/tags/vpls/</guid>
       <description></description>
     </item>
     
